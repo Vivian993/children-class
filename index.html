@@ -256,6 +256,14 @@
           <label class="text-sm font-bold text-slate-500 mb-1 block">考試時間與科目 (選填，會顯示在當天上方)</label>
           <textarea id="event-note" rows="3" placeholder="例如：&#10;08:10-09:00 數學&#10;09:10-10:00 英文" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"></textarea>
         </div>
+        <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+          <label class="flex items-center gap-2 text-sm font-bold text-indigo-700 mb-2">
+            <input id="event-push-enable" type="checkbox" class="w-4 h-4 rounded accent-indigo-600"/>
+            <i data-lucide="alarm-clock" class="w-4 h-4"></i> 同時設定手機推播提醒
+          </label>
+          <input id="event-push-time" type="time" value="08:00" class="w-full p-2.5 bg-white border border-indigo-200 rounded-xl text-base font-bold text-slate-700"/>
+          <p class="text-xs text-indigo-500 mt-1.5">會在上面選的日期＋這個時間，自動推播到你手機（建議設定在未來 3 天內）</p>
+        </div>
       </div>
       <button onclick="saveEvent()" class="w-full mt-6 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 text-base">儲存</button>
     </div>
@@ -786,6 +794,8 @@
         document.getElementById('event-date').value = date;
         document.getElementById('event-note').value = '';
       }
+      document.getElementById('event-push-enable').checked = false;
+      document.getElementById('event-push-time').value = '08:00';
 
       const modal = document.getElementById('modal-event');
       const content = document.getElementById('modal-event-content');
@@ -813,7 +823,7 @@
       }
     }
 
-    function saveEvent() {
+    async function saveEvent() {
       const title = document.getElementById('event-title').value;
       const date = document.getElementById('event-date').value;
       const note = document.getElementById('event-note').value;
@@ -832,8 +842,29 @@
           appState.tasks.push({ id: Date.now().toString(), title, date, completed: false });
         }
       }
+
+      const pushEnabled = document.getElementById('event-push-enable').checked;
+      const pushTime = document.getElementById('event-push-time').value || '08:00';
+
       closeModal('modal-event');
       saveData();
+
+      if (pushEnabled) {
+        if (!appState.config.ntfyTopic) {
+          alert('要排程推播，需要先在「設定/管理」填好 Ntfy 頻道名稱喔！這次的日程/任務已經存檔，但沒有排程推播。');
+          return;
+        }
+        const target = new Date(`${date}T${pushTime}:00`);
+        const result = await schedulePushAt(target, title, `[課表提醒] ${title}`);
+        if (result.ok) {
+          const dl = target.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          alert(`已存檔，並設定將於 ${dl} 自動推播！`);
+        } else if (result.reason === 'past-time') {
+          alert('已存檔，但推播時間已經過了，沒有設定排程。');
+        } else {
+          alert('已存檔，但推播排程失敗，請確認網路連線。');
+        }
+      }
     }
 
     function toggleTask(id) {
@@ -890,6 +921,30 @@
     }
     function testNtfy() { triggerNtfy('測試通知', '如果手機有響，代表連動成功！'); }
 
+    // 核心排程函式：回傳 {ok, message} 供不同地方呼叫
+    async function schedulePushAt(target, message, titleText) {
+      const topic = appState.config.ntfyTopic;
+      if (!topic) return { ok: false, reason: 'no-topic' };
+      const now = new Date();
+      if (isNaN(target.getTime()) || target <= now) return { ok: false, reason: 'past-time' };
+
+      const unixSeconds = Math.floor(target.getTime() / 1000);
+      try {
+        const res = await fetch('https://ntfy.sh/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: topic,
+            message: message,
+            title: titleText || '[課表提醒] 排程通知',
+            tags: ['alarm_clock'],
+            delay: String(unixSeconds)
+          })
+        });
+        return { ok: res.ok };
+      } catch (e) { return { ok: false, reason: e.message }; }
+    }
+
     async function scheduleNtfy() {
       const topic = appState.config.ntfyTopic;
       if (!topic) {
@@ -902,31 +957,15 @@
       if (!msg) return alert('請輸入提醒內容！');
 
       const target = new Date(dtVal);
-      const now = new Date();
-      if (isNaN(target.getTime()) || target <= now) {
-        return alert('請選擇未來的日期與時間！');
-      }
-
-      const unixSeconds = Math.floor(target.getTime() / 1000);
-
-      try {
-        const res = await fetch('https://ntfy.sh/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topic: topic,
-            message: msg,
-            title: '[課表提醒] 排程通知',
-            tags: ['alarm_clock'],
-            delay: String(unixSeconds)
-          })
-        });
-        if (!res.ok) throw new Error('狀態碼 ' + res.status);
+      const result = await schedulePushAt(target, msg);
+      if (result.ok) {
         const dateLabel = target.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         alert(`已設定排程！將於 ${dateLabel} 自動推播。`);
         document.getElementById('schedule-message').value = '';
-      } catch (e) {
-        alert('排程設定失敗，請確認頻道名稱與網路連線：' + e.message);
+      } else if (result.reason === 'past-time') {
+        alert('請選擇未來的日期與時間！');
+      } else {
+        alert('排程設定失敗，請確認頻道名稱與網路連線。');
       }
     }
 
