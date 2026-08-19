@@ -616,13 +616,15 @@
         const nav = document.getElementById(`nav-${t}`);
         nav.classList.remove('text-blue-600');
         nav.classList.add('text-slate-400');
-        nav.querySelector('i').classList.remove('fill-blue-50');
+        const navIcon = nav.querySelector('svg, i');
+        if (navIcon) navIcon.classList.remove('fill-blue-50');
       });
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
       const activeNav = document.getElementById(`nav-${tab}`);
       activeNav.classList.remove('text-slate-400');
       activeNav.classList.add('text-blue-600');
-      activeNav.querySelector('i').classList.add('fill-blue-50');
+      const activeIcon = activeNav.querySelector('svg, i');
+      if (activeIcon) activeIcon.classList.add('fill-blue-50');
     }
 
     function toggleEditMode() {
