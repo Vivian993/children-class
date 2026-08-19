@@ -775,13 +775,19 @@
         return;
       }
       try {
-        await fetch(`https://ntfy.sh/${topic}`, {
+        const res = await fetch('https://ntfy.sh/', {
           method: 'POST',
-          headers: { 'Title': `[課表提醒] ${title}`, 'Tags': 'books,warning' },
-          body: message
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: topic,
+            message: message,
+            title: `[課表提醒] ${title}`,
+            tags: ['books', 'warning']
+          })
         });
+        if (!res.ok) throw new Error('推播失敗，狀態碼 ' + res.status);
         alert('推播已發送至手機！');
-      } catch (e) { alert('推播發送失敗。'); }
+      } catch (e) { alert('推播發送失敗：' + e.message); }
     }
     function testNtfy() { triggerNtfy('測試通知', '如果手機有響，代表連動成功！'); }
 
