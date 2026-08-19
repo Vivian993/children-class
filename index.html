@@ -287,17 +287,30 @@
     // ==========================================
     // 常數與資料結構
     // ==========================================
-    const TIME_SLOTS = [
-      { id: 0, name: '早自習', start: '07:30', end: '07:50' },
-      { id: 1, name: '第一節', start: '08:10', end: '09:00' },
-      { id: 2, name: '第二節', start: '09:10', end: '10:00' },
-      { id: 3, name: '第三節', start: '10:10', end: '11:00' },
-      { id: 4, name: '第四節', start: '11:10', end: '12:00' },
-      { id: 5, name: '第五節', start: '13:10', end: '14:00' },
-      { id: 6, name: '第六節', start: '14:10', end: '15:00' },
-      { id: 7, name: '第七節', start: '15:15', end: '16:05' },
-      { id: 8, name: '第八節', start: '16:10', end: '17:00' },
-    ];
+    const TIME_SLOTS_BY_CHILD = {
+      A: [
+        { id: 0, name: '早自習', start: '07:30', end: '07:50' },
+        { id: 1, name: '第一節', start: '08:10', end: '09:00' },
+        { id: 2, name: '第二節', start: '09:10', end: '10:00' },
+        { id: 3, name: '第三節', start: '10:10', end: '11:00' },
+        { id: 4, name: '第四節', start: '11:10', end: '12:00' },
+        { id: 5, name: '第五節', start: '13:10', end: '14:00' },
+        { id: 6, name: '第六節', start: '14:10', end: '15:00' },
+        { id: 7, name: '第七節', start: '15:15', end: '16:05' },
+        { id: 8, name: '第八節', start: '16:10', end: '17:00' },
+      ],
+      B: [
+        { id: 0, name: '導師時間', start: '07:50', end: '08:10' },
+        { id: 1, name: '第一節', start: '08:45', end: '09:25' },
+        { id: 2, name: '第二節', start: '09:35', end: '10:15' },
+        { id: 3, name: '第三節', start: '10:30', end: '11:10' },
+        { id: 4, name: '第四節', start: '11:20', end: '12:00' },
+        { id: 5, name: '第五節', start: '13:10', end: '13:50' },
+        { id: 6, name: '第六節', start: '14:00', end: '14:40' },
+        { id: 7, name: '第七節', start: '14:50', end: '15:30' },
+      ],
+    };
+    const getSlots = (childId) => TIME_SLOTS_BY_CHILD[childId] || TIME_SLOTS_BY_CHILD.A;
 
     const COLORS = [
       { id: 'red', class: 'bg-red-100 text-red-900 border-red-200 ring-red-400' },
@@ -319,7 +332,50 @@
       "1_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "3_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "4_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "5_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "6_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "7_5": { name: '英語聽講', teacher: '林宗平', color: 'yellow' }, "8_5": { name: '英文選', teacher: '林宗平', color: 'yellow' },
     };
 
-    // 兩個孩子各自的主題色（可在設定頁自訂）
+    // 弟弟（龍安國小 114學年度 五年四班）課表，依上傳的功課表照片登入
+    const FULL_SCHEDULE_B = {
+      "0_1": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
+      "1_1": { name: '體育', teacher: '洪嘉鴻', color: 'teal' },
+      "2_1": { name: '國語', teacher: '何蕙如', color: 'red' },
+      "3_1": { name: '數學', teacher: '何蕙如', color: 'indigo' },
+      "4_1": { name: '藝術音樂', teacher: '蔡詠嫺', color: 'pink' },
+      "5_1": { name: '本土語言', teacher: '林美蘭', color: 'gray' },
+      "6_1": { name: '綜合活動', teacher: '', color: 'gray' },
+      "7_1": { name: '綜合活動', teacher: '', color: 'gray' },
+
+      "0_2": { name: '兒童週會', teacher: '', color: 'gray' },
+      "1_2": { name: '國語', teacher: '何蕙如', color: 'red' },
+      "2_2": { name: '社會', teacher: '陳蓉舒', color: 'purple' },
+      "3_2": { name: '社會', teacher: '陳蓉舒', color: 'purple' },
+      "4_2": { name: '數學', teacher: '何蕙如', color: 'indigo' },
+      "5_2": { name: '龍安嘉年華', teacher: '', color: 'pink' },
+      "6_2": { name: '自然', teacher: '黃敏吾', color: 'green' },
+      "7_2": { name: '英文', teacher: '王昭華/周玲', color: 'yellow' },
+
+      "0_3": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
+      "1_3": { name: '國語', teacher: '何蕙如', color: 'red' },
+      "2_3": { name: '數學', teacher: '何蕙如', color: 'indigo' },
+      "3_3": { name: '藝術', teacher: '陳怜竹', color: 'pink' },
+      "4_3": { name: '藝術', teacher: '陳怜竹', color: 'pink' },
+
+      "0_4": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
+      "1_4": { name: '國語', teacher: '何蕙如', color: 'red' },
+      "2_4": { name: '社會', teacher: '陳蓉舒', color: 'purple' },
+      "3_4": { name: 'i想像', teacher: '', color: 'yellow' },
+      "4_4": { name: '英文', teacher: '王昭華/周玲', color: 'yellow' },
+      "5_4": { name: '數學', teacher: '何蕙如', color: 'indigo' },
+      "6_4": { name: 'i創客', teacher: '黃詠激', color: 'blue' },
+      "7_4": { name: '健康', teacher: '', color: 'green' },
+
+      "0_5": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
+      "1_5": { name: '自然', teacher: '黃敏吾', color: 'green' },
+      "2_5": { name: '自然', teacher: '黃敏吾', color: 'green' },
+      "3_5": { name: 'i視界', teacher: '王昭華/周玲', color: 'yellow' },
+      "4_5": { name: '國語', teacher: '何蕙如', color: 'red' },
+      "5_5": { name: 'i思維', teacher: '', color: 'indigo' },
+      "6_5": { name: '體育', teacher: '洪嘉鴻', color: 'teal' },
+      "7_5": { name: 'i閱家', teacher: '', color: 'yellow' },
+    };
     const THEME_COLORS = [
       { id: 'blue',   accent: 'bg-blue-500',   soft: 'bg-blue-50',   text: 'text-blue-600',   ring: 'ring-blue-300', bgHex: '#EFF6FF' },
       { id: 'orange', accent: 'bg-orange-500', soft: 'bg-orange-50', text: 'text-orange-600', ring: 'ring-orange-300', bgHex: '#FFF3EA' },
@@ -338,7 +394,7 @@
       activeChild: 'A',
       students: {
         A: { name: '', theme: 'blue',   schedule: {}, tasks: [], events: [] },
-        B: { name: '弟弟', theme: 'orange', schedule: {}, tasks: [], events: [] }
+        B: { name: '弟弟', theme: 'orange', schedule: JSON.parse(JSON.stringify(FULL_SCHEDULE_B)), tasks: [], events: [] }
       },
       config: { ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
     };
@@ -466,13 +522,17 @@
             if (Object.keys(appState.students.A.schedule).length === 0) {
               appState.students.A.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
             }
+            if (Object.keys(appState.students.B.schedule).length === 0) {
+              appState.students.B.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE_B));
+            }
           } else {
-            // 舊版格式：搬移成哥哥(A)的資料，弟弟(B)維持空白
+            // 舊版格式：搬移成哥哥(A)的資料，弟弟(B)帶入真實課表
             appState.activeChild = 'A';
             appState.students.A.schedule = Object.keys(data.schedule || {}).length > 0 ? data.schedule : JSON.parse(JSON.stringify(FULL_SCHEDULE));
             appState.students.A.tasks = data.tasks || [];
             appState.students.A.events = data.events || [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
             appState.students.A.name = (data.config && data.config.studentName) || '';
+            appState.students.B.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE_B));
           }
           appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config || {});
         } catch(e) { resetData(false); }
@@ -500,7 +560,7 @@
 
     function resetData(confirm = true) {
       if (confirm && !window.confirm("確定要重置這位孩子的課表嗎？")) return;
-      cur().schedule = JSON.parse(JSON.stringify(appState.activeChild === 'A' ? FULL_SCHEDULE : {}));
+      cur().schedule = JSON.parse(JSON.stringify(appState.activeChild === 'A' ? FULL_SCHEDULE : FULL_SCHEDULE_B));
       if(!confirm) {
         if (appState.activeChild === 'A') {
           cur().schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
@@ -571,8 +631,9 @@
       const day = now.getDay();
       const nowMins = now.getHours() * 60 + now.getMinutes();
       if (day < 1 || day > 5) return '週末 🎉';
-      for (let i = 0; i < TIME_SLOTS.length; i++) {
-        const slot = TIME_SLOTS[i];
+      const slots = getSlots(childId);
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
         const [sH, sM] = slot.start.split(':').map(Number);
         const [eH, eM] = slot.end.split(':').map(Number);
         const cell = student.schedule[`${i}_${day}`];
@@ -653,8 +714,9 @@
         const nowMins = now.getHours() * 60 + now.getMinutes();
         let found = false;
         if (day >= 1 && day <= 5) {
-          for (let i = 0; i < TIME_SLOTS.length; i++) {
-            const slot = TIME_SLOTS[i];
+          const slots = getSlots(appState.activeChild);
+          for (let i = 0; i < slots.length; i++) {
+            const slot = slots[i];
             const [sH, sM] = slot.start.split(':').map(Number);
             const [eH, eM] = slot.end.split(':').map(Number);
             const cell = cur().schedule[`${i}_${day}`];
@@ -680,7 +742,7 @@
       const tbody = document.getElementById('schedule-body');
       tbody.innerHTML = '';
       
-      TIME_SLOTS.forEach((slot, rIdx) => {
+      getSlots(appState.activeChild).forEach((slot, rIdx) => {
         const tr = document.createElement('tr');
         if (rIdx === 4) tr.className = "border-b-4 border-slate-200";
         
