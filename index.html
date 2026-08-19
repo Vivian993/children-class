@@ -99,7 +99,7 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('hs_schedule_data_v5');
+    const saved = localStorage.getItem('hs_schedule_data_v6');
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -125,7 +125,7 @@ export default function App() {
   useEffect(() => {
     if (isInitialized) {
         const data = { schedule, tasks, events, config };
-        localStorage.setItem('hs_schedule_data_v5', JSON.stringify(data));
+        localStorage.setItem('hs_schedule_data_v6', JSON.stringify(data));
     }
   }, [schedule, tasks, events, config, isInitialized]);
 
@@ -283,7 +283,7 @@ export default function App() {
     try {
       await fetch(`https://ntfy.sh/${config.ntfyTopic}`, {
         method: 'POST',
-        headers: { 'Title': `[北科復工助理] ${title}`, 'Tags': 'books,warning' },
+        headers: { 'Title': `[課表助理] ${title}`, 'Tags': 'books,warning' },
         body: message
       });
       alert('推播已發送至手機！');
@@ -297,10 +297,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
-      
-      <!-- 📌 iPhone 桌面 App 圖示 -->
-      <link rel="apple-touch-icon" href="custom-icon.png">
-      <link rel="icon" type="image/png" href="custom-icon.png">
 
       {/* 智慧動態狀態列 */}
       <div className={`px-4 py-3 shadow-sm sticky top-0 z-30 border-b transition-colors ${
@@ -319,13 +315,14 @@ export default function App() {
             </div>
           </div>
           <div className="font-bold text-base sm:text-lg text-slate-800 tracking-wider">
-            {config.studentName || '北科復工'}
+            {config.studentName || '未命名課表'}
           </div>
         </div>
       </div>
 
       <main className="max-w-5xl mx-auto p-2 sm:p-4 mt-2">
         
+        {/* ================== 課表分頁 ================== */}
         {activeTab === 'schedule' && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
@@ -401,6 +398,7 @@ export default function App() {
           </div>
         )}
 
+        {/* ================== 任務/行事曆分頁 ================== */}
         {activeTab === 'tasks' && (
           <div className="space-y-4 max-w-2xl mx-auto animate-in fade-in duration-300">
             {renderCalendar()}
@@ -505,6 +503,7 @@ export default function App() {
           </div>
         )}
 
+        {/* ================== 設定分頁 ================== */}
         {activeTab === 'settings' && (
           <div className="space-y-4 max-w-2xl mx-auto animate-in fade-in duration-300">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
@@ -516,7 +515,7 @@ export default function App() {
                     type="text" 
                     value={config.studentName}
                     onChange={(e) => setConfig({...config, studentName: e.target.value})}
-                    placeholder="例如: 北科復工"
+                    placeholder="例如: 北科復工 / 王小明課表"
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -584,6 +583,7 @@ export default function App() {
         )}
       </main>
 
+      {/* 底部導覽列 */}
       <div className="fixed bottom-0 w-full bg-white border-t border-slate-200 px-6 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
         <div className="max-w-md mx-auto flex justify-between items-center">
           <button onClick={() => setActiveTab('schedule')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'schedule' ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -601,6 +601,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* 編輯課程 Modal */}
       {selectedCell && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl animate-in fade-in zoom-in-95 duration-200">
@@ -638,6 +639,7 @@ export default function App() {
         </div>
       )}
 
+      {/* 新增/編輯任務與段考 Modal */}
       {showEventModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl animate-in fade-in zoom-in-95 duration-200">
@@ -691,4 +693,5 @@ export default function App() {
     </div>
   );
 }
+
 
