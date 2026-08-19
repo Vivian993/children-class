@@ -18,10 +18,10 @@
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans pb-20 select-none sm:select-auto">
+<body class="bg-[#FBF7F0] text-slate-800 font-sans pb-20 select-none sm:select-auto">
 
   <!-- 動態狀態列 (動態島) -->
-  <div id="dynamic-island" class="bg-white px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors">
+  <div id="dynamic-island" class="bg-[#FFFDF8] px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors">
     <div class="max-w-5xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div id="status-icon-bg" class="p-2 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600">
@@ -40,13 +40,23 @@
         長按輸入姓名/班級
       </div>
     </div>
+    <div id="dual-status" class="max-w-5xl mx-auto flex items-center gap-4 px-4 pb-2.5 pt-0.5 text-xs sm:text-sm">
+      <span id="dual-status-A">哥哥：載入中...</span>
+      <span class="text-slate-300">｜</span>
+      <span id="dual-status-B">弟弟：載入中...</span>
+    </div>
   </div>
 
   <main class="max-w-5xl mx-auto p-2 sm:p-4 mt-2">
-    
+
+    <!-- 哥哥/弟弟 切換鈕 -->
+    <div id="child-switcher" class="flex gap-2 mb-4">
+      <!-- JS 動態產生 -->
+    </div>
+
     <!-- ================== 課表分頁 ================== -->
     <div id="tab-schedule" class="space-y-4">
-      <div class="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+      <div class="flex justify-between items-center bg-[#FFFDF8] p-3 rounded-2xl shadow-sm border border-slate-100">
         <h2 class="font-bold flex items-center gap-2 text-slate-700 text-base sm:text-lg">
           <i data-lucide="calendar" class="w-5 h-5 sm:w-6 sm:h-6"></i> 本週課表
         </h2>
@@ -55,7 +65,7 @@
         </button>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto relative">
+      <div class="bg-[#FFFDF8] rounded-2xl shadow-sm border border-slate-200 overflow-x-auto relative">
         <div id="edit-overlay" class="absolute inset-0 bg-amber-500/5 border-2 border-amber-400 pointer-events-none rounded-2xl z-10 hidden"></div>
         <table class="w-full text-center border-collapse min-w-[550px] sm:min-w-[650px]">
           <thead>
@@ -79,7 +89,7 @@
     <div id="tab-tasks" class="space-y-4 max-w-2xl mx-auto hidden">
       
       <!-- 月曆 -->
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
+      <div class="bg-[#FFFDF8] p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
         <div class="flex justify-between items-center mb-4 text-slate-700">
           <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
           <span id="calendar-month-year" class="font-bold text-lg sm:text-xl">--</span>
@@ -107,7 +117,7 @@
       </div>
 
       <!-- 待辦清單 -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <div class="bg-[#FFFDF8] rounded-2xl p-4 shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-bold text-slate-700 flex items-center gap-2 text-base sm:text-lg"><i data-lucide="check-square" class="w-5 h-5 sm:w-6 sm:h-6"></i> 待辦與小考</h3>
           <button onclick="openEventModal(null, 'task')" class="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition">
@@ -122,12 +132,16 @@
 
     <!-- ================== 設定分頁 ================== -->
     <div id="tab-settings" class="space-y-4 max-w-2xl mx-auto hidden">
-      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+      <div class="bg-[#FFFDF8] rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
         <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-base sm:text-lg"><i data-lucide="settings" class="w-5 h-5 sm:w-6 sm:h-6"></i> 系統設定</h3>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-bold text-slate-500 mb-1">姓名/班級 (也可在上方長按輸入)</label>
             <input id="input-school-name" type="text" placeholder="例如: 王小明 / 302班" onchange="saveSettings()" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-500 mb-2">這位孩子的主題色</label>
+            <div id="theme-picker" class="flex flex-wrap gap-2"></div>
           </div>
           <div>
             <label class="flex items-center justify-between text-sm font-bold text-slate-500 mb-1">
@@ -138,7 +152,7 @@
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
             <h4 class="font-bold text-base text-slate-700 mb-2 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5"></i> Ntfy 手機推播</h4>
             <p class="text-xs sm:text-sm text-slate-500 mb-3">透過 ntfy.sh 免費接收通知。在手機下載 ntfy App 並訂閱下方頻道名稱即可連動。</p>
-            <input id="input-ntfy-topic" type="text" placeholder="輸入頻道密語 (例: john_hs_999)" onchange="saveSettings()" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"/>
+            <input id="input-ntfy-topic" type="text" placeholder="輸入頻道密語 (例: john_hs_999)" onchange="saveSettings()" class="w-full p-2.5 bg-[#FFFDF8] border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"/>
 
             <div class="flex items-center justify-between mb-3">
               <span class="text-sm font-bold text-slate-600">打開網頁自動推播</span>
@@ -146,7 +160,7 @@
             </div>
             <div class="flex items-center justify-between mb-3">
               <label class="text-sm font-bold text-slate-600" for="input-reminder-days">提前幾天提醒</label>
-              <input id="input-reminder-days" type="number" min="0" max="30" onchange="saveSettings()" class="w-20 p-2 bg-white border border-slate-200 rounded-lg text-base text-center font-bold"/>
+              <input id="input-reminder-days" type="number" min="0" max="30" onchange="saveSettings()" class="w-20 p-2 bg-[#FFFDF8] border border-slate-200 rounded-lg text-base text-center font-bold"/>
             </div>
 
             <button onclick="testNtfy()" class="w-full text-sm bg-amber-500 text-white px-3 py-2 rounded-lg font-bold shadow-sm">發送測試推播</button>
@@ -156,21 +170,21 @@
             <h4 class="font-bold text-base text-slate-700 mb-2 flex items-center gap-2"><i data-lucide="alarm-clock" class="w-5 h-5"></i> 排程推播（指定日期時間）</h4>
             <p class="text-xs sm:text-sm text-slate-500 mb-3">設定好之後，就算沒開網頁、手機沒開機，時間到 ntfy 伺服器也會自動幫你推播。<br>（免費版建議排程時間不要超過未來 3 天，太久之後可能不會送達）</p>
             <label class="text-sm font-bold text-slate-500 mb-1 block">日期與時間</label>
-            <input id="schedule-datetime" type="datetime-local" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-base mb-3"/>
+            <input id="schedule-datetime" type="datetime-local" class="w-full p-2.5 bg-[#FFFDF8] border border-slate-200 rounded-xl text-base mb-3"/>
             <label class="text-sm font-bold text-slate-500 mb-1 block">提醒內容</label>
-            <input id="schedule-message" type="text" placeholder="例如：段考第一節即將開始" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-base mb-3"/>
+            <input id="schedule-message" type="text" placeholder="例如：段考第一節即將開始" class="w-full p-2.5 bg-[#FFFDF8] border border-slate-200 rounded-xl text-base mb-3"/>
             <button onclick="scheduleNtfy()" class="w-full text-sm bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow-sm">設定排程推播</button>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+      <div class="bg-[#FFFDF8] rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
         <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-base sm:text-lg"><i data-lucide="save" class="w-5 h-5 sm:w-6 sm:h-6"></i> 備份與還原</h3>
         <div class="flex gap-3 mb-4">
           <button onclick="exportData()" class="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 text-white py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-700 transition">
             <i data-lucide="download" class="w-4 h-4"></i> 下載備份
           </button>
-          <label class="flex-1 flex items-center justify-center gap-1.5 bg-white border-2 border-slate-200 text-slate-700 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-slate-50 transition">
+          <label class="flex-1 flex items-center justify-center gap-1.5 bg-[#FFFDF8] border-2 border-slate-200 text-slate-700 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-slate-50 transition">
             <i data-lucide="upload" class="w-4 h-4"></i> 匯入資料
             <input type="file" accept=".json" onchange="importData(event)" class="hidden" />
           </label>
@@ -184,7 +198,7 @@
   </main>
 
   <!-- 底部導覽列 -->
-  <div class="fixed bottom-0 w-full bg-white border-t border-slate-200 px-4 sm:px-6 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
+  <div class="fixed bottom-0 w-full bg-[#FFFDF8] border-t border-slate-200 px-4 sm:px-6 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <button onclick="switchTab('schedule')" id="nav-schedule" class="flex flex-col items-center p-2 text-blue-600 transition-colors">
         <i data-lucide="calendar" class="w-6 h-6 sm:w-7 sm:h-7 fill-blue-50"></i>
@@ -203,7 +217,7 @@
 
   <!-- 編輯課表 Modal -->
   <div id="modal-cell" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl transition-transform transform scale-95" id="modal-cell-content">
+    <div class="bg-[#FFFDF8] rounded-2xl w-full max-w-sm p-5 shadow-xl transition-transform transform scale-95" id="modal-cell-content">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-xl text-slate-800">編輯課程</h3>
         <button onclick="closeModal('modal-cell')" class="p-1 text-slate-400 hover:bg-slate-100 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -234,14 +248,14 @@
 
   <!-- 編輯行事曆 Modal -->
   <div id="modal-event" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl transition-transform transform scale-95" id="modal-event-content">
+    <div class="bg-[#FFFDF8] rounded-2xl w-full max-w-sm p-5 shadow-xl transition-transform transform scale-95" id="modal-event-content">
       <div class="flex justify-between items-center mb-4">
         <h3 id="event-modal-title" class="font-bold text-xl text-slate-800">事項設定</h3>
         <button onclick="closeModal('modal-event')" class="p-1 text-slate-400 hover:bg-slate-100 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
       <div class="space-y-4">
         <div id="event-type-selector" class="flex bg-slate-100 p-1 rounded-xl">
-          <button onclick="setEventType('event')" id="btn-type-event" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-white shadow-sm text-purple-600">📅 重要日程</button>
+          <button onclick="setEventType('event')" id="btn-type-event" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-[#FFFDF8] shadow-sm text-purple-600">📅 重要日程</button>
           <button onclick="setEventType('task')" id="btn-type-task" class="flex-1 py-1.5 text-sm font-bold rounded-lg transition text-slate-500">📝 待辦任務</button>
         </div>
         <div>
@@ -261,7 +275,7 @@
             <input id="event-push-enable" type="checkbox" class="w-4 h-4 rounded accent-indigo-600"/>
             <i data-lucide="alarm-clock" class="w-4 h-4"></i> 同時設定手機推播提醒
           </label>
-          <input id="event-push-time" type="time" value="08:00" class="w-full p-2.5 bg-white border border-indigo-200 rounded-xl text-base font-bold text-slate-700"/>
+          <input id="event-push-time" type="time" value="08:00" class="w-full p-2.5 bg-[#FFFDF8] border border-indigo-200 rounded-xl text-base font-bold text-slate-700"/>
           <p class="text-xs text-indigo-500 mt-1.5">會在上面選的日期＋這個時間，自動推播到你手機（建議設定在未來 3 天內）</p>
         </div>
       </div>
@@ -305,13 +319,28 @@
       "1_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "3_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "4_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "5_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "6_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "7_5": { name: '英語聽講', teacher: '林宗平', color: 'yellow' }, "8_5": { name: '英文選', teacher: '林宗平', color: 'yellow' },
     };
 
-    // App 狀態
+    // 兩個孩子各自的主題色（可在設定頁自訂）
+    const THEME_COLORS = [
+      { id: 'blue',   accent: 'bg-blue-500',   soft: 'bg-blue-50',   text: 'text-blue-600',   ring: 'ring-blue-300' },
+      { id: 'orange', accent: 'bg-orange-500', soft: 'bg-orange-50', text: 'text-orange-600', ring: 'ring-orange-300' },
+      { id: 'purple', accent: 'bg-purple-500', soft: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-300' },
+      { id: 'green',  accent: 'bg-emerald-500',soft: 'bg-emerald-50',text: 'text-emerald-600', ring: 'ring-emerald-300' },
+      { id: 'pink',   accent: 'bg-pink-500',   soft: 'bg-pink-50',   text: 'text-pink-600',   ring: 'ring-pink-300' },
+      { id: 'teal',   accent: 'bg-teal-500',   soft: 'bg-teal-50',   text: 'text-teal-600',   ring: 'ring-teal-300' },
+    ];
+    const getTheme = (id) => THEME_COLORS.find(t => t.id === id) || THEME_COLORS[0];
+
+    // App 狀態：兩個孩子分開管理課表/任務/行事曆，設定（ntfy等）共用
     let appState = {
-      schedule: {},
-      tasks: [],
-      events: [],
-      config: { studentName: '', ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
+      activeChild: 'A',
+      students: {
+        A: { name: '', theme: 'blue',   schedule: {}, tasks: [], events: [] },
+        B: { name: '弟弟', theme: 'orange', schedule: {}, tasks: [], events: [] }
+      },
+      config: { ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
     };
+    // 目前作用中孩子的資料（永遠回傳同一個物件參照，直接修改即可）
+    function cur(){ return appState.students[appState.activeChild]; }
 
     let isEditMode = false;
     let currentMonthView = new Date();
@@ -397,10 +426,11 @@
       clearTimeout(longPressTimer);
     }
     function editHeaderName() {
-      const current = appState.config.studentName || '';
-      const input = window.prompt('請輸入孩子的姓名與班級', current);
+      const current = cur().name || '';
+      const input = window.prompt(`請輸入${appState.activeChild === 'A' ? '哥哥' : '弟弟'}的姓名與班級`, current);
       if (input !== null) {
-        appState.config.studentName = input;
+        cur().name = input;
+        document.getElementById('input-school-name').value = cur().name;
         saveData();
       }
     }
@@ -425,21 +455,36 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          appState.schedule = Object.keys(data.schedule || {}).length > 0 ? data.schedule : JSON.parse(JSON.stringify(FULL_SCHEDULE));
-          appState.tasks = data.tasks || [];
-          appState.events = data.events || [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
-          appState.config = Object.assign({ studentName: '', ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config || {});
+          if (data.students) {
+            // 新版格式：兩個孩子分開存
+            appState.activeChild = data.activeChild === 'B' ? 'B' : 'A';
+            appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [] }, data.students.A || {});
+            appState.students.B = Object.assign({ name: '弟弟', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
+            if (Object.keys(appState.students.A.schedule).length === 0) {
+              appState.students.A.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
+            }
+          } else {
+            // 舊版格式：搬移成哥哥(A)的資料，弟弟(B)維持空白
+            appState.activeChild = 'A';
+            appState.students.A.schedule = Object.keys(data.schedule || {}).length > 0 ? data.schedule : JSON.parse(JSON.stringify(FULL_SCHEDULE));
+            appState.students.A.tasks = data.tasks || [];
+            appState.students.A.events = data.events || [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
+            appState.students.A.name = (data.config && data.config.studentName) || '';
+          }
+          appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config || {});
         } catch(e) { resetData(false); }
       } else {
         resetData(false);
       }
-      
+
       // 更新 UI Input
-      document.getElementById('input-school-name').value = appState.config.studentName;
+      document.getElementById('input-school-name').value = cur().name;
       document.getElementById('input-ntfy-topic').value = appState.config.ntfyTopic;
       document.getElementById('input-reminder-days').value = appState.config.reminderDays;
       renderSoundToggle();
       renderAutoNotifyToggle();
+      renderChildSwitcher();
+      renderThemePicker();
       renderAll();
       autoNotifyIfNeeded();
     }
@@ -450,12 +495,53 @@
     }
 
     function resetData(confirm = true) {
-      if (confirm && !window.confirm("確定要重置為預設課表嗎？")) return;
-      appState.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
+      if (confirm && !window.confirm("確定要重置這位孩子的課表嗎？")) return;
+      cur().schedule = JSON.parse(JSON.stringify(appState.activeChild === 'A' ? FULL_SCHEDULE : {}));
       if(!confirm) {
-        appState.events = [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
+        if (appState.activeChild === 'A') {
+          cur().schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
+          cur().events = [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
+        }
       }
       saveData();
+    }
+
+    // 切換哥哥/弟弟
+    function switchChild(childId){
+      appState.activeChild = childId;
+      selectedCalDateStr = null;
+      document.getElementById('input-school-name').value = cur().name;
+      renderChildSwitcher();
+      renderThemePicker();
+      saveData();
+    }
+
+    function renderThemePicker(){
+      const wrap = document.getElementById('theme-picker');
+      if (!wrap) return;
+      wrap.innerHTML = THEME_COLORS.map(t => `
+        <button onclick="setChildTheme('${t.id}')" class="w-9 h-9 rounded-full ${t.accent} transition-transform ${cur().theme === t.id ? 'scale-110 ring-2 ring-offset-2 ' + t.ring : 'opacity-60'}"></button>
+      `).join('');
+    }
+    function setChildTheme(themeId){
+      cur().theme = themeId;
+      renderThemePicker();
+      renderChildSwitcher();
+      saveData();
+    }
+
+    function renderChildSwitcher(){
+      const wrap = document.getElementById('child-switcher');
+      if(!wrap) return;
+      wrap.innerHTML = ['A','B'].map(id => {
+        const s = appState.students[id];
+        const theme = getTheme(s.theme);
+        const active = appState.activeChild === id;
+        const label = s.name || (id === 'A' ? '哥哥' : '弟弟');
+        return `<button onclick="switchChild('${id}')" class="flex-1 py-2 rounded-xl text-sm font-bold transition ${active ? theme.accent + ' text-white shadow-md' : theme.soft + ' ' + theme.text}">
+          ${label}
+        </button>`;
+      }).join('');
     }
 
     // ==========================================
@@ -463,6 +549,7 @@
     // ==========================================
     function renderAll() {
       renderDynamicIsland();
+      renderDualStatus();
       renderSchedule();
       renderTasksAndEvents();
       renderCalendar();
@@ -471,14 +558,47 @@
       lucide.createIcons();
     }
 
+    // 取得指定孩子目前的課程狀態（給雙人狀態列使用）
+    function getChildCurrentClassLabel(childId){
+      const student = appState.students[childId];
+      const now = new Date();
+      const day = now.getDay();
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      if (day < 1 || day > 5) return '週末 🎉';
+      for (let i = 0; i < TIME_SLOTS.length; i++) {
+        const slot = TIME_SLOTS[i];
+        const [sH, sM] = slot.start.split(':').map(Number);
+        const [eH, eM] = slot.end.split(':').map(Number);
+        const cell = student.schedule[`${i}_${day}`];
+        const className = cell ? cell.name : slot.name;
+        if (nowMins >= (sH*60+sM) && nowMins <= (eH*60+eM)) return className;
+        if (nowMins < (sH*60+sM)) return `下堂：${className}`;
+      }
+      return '已放學 🎒';
+    }
+
+    function renderDualStatus(){
+      const wrap = document.getElementById('dual-status');
+      if (!wrap) return;
+      ['A','B'].forEach(id => {
+        const s = appState.students[id];
+        const theme = getTheme(s.theme);
+        const label = s.name || (id === 'A' ? '哥哥' : '弟弟');
+        const el = document.getElementById(`dual-status-${id}`);
+        if (el) {
+          el.innerHTML = `<span class="font-bold ${theme.text}">${label}</span>：${getChildCurrentClassLabel(id)}`;
+        }
+      });
+    }
+
     // 動態狀態列
     function renderDynamicIsland() {
       const now = new Date();
       document.getElementById('current-time-display').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      document.getElementById('display-school-name').innerText = appState.config.studentName || '長按輸入姓名/班級';
+      document.getElementById('display-school-name').innerText = cur().name || '長按輸入姓名/班級';
 
       const todayStr = getLocalDateStr(now);
-      const todayExam = appState.events.find(e => e.date === todayStr);
+      const todayExam = cur().events.find(e => e.date === todayStr);
       const island = document.getElementById('dynamic-island');
       const iconBg = document.getElementById('status-icon-bg');
       const msg = document.getElementById('status-message');
@@ -516,7 +636,7 @@
         }
       } else {
         sub.innerText = '';
-        island.className = "bg-white px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors";
+        island.className = "bg-[#FFFDF8] px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors";
         iconBg.className = "p-2 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600";
         document.getElementById('status-icon').setAttribute('data-lucide', 'bell');
         
@@ -529,7 +649,7 @@
             const slot = TIME_SLOTS[i];
             const [sH, sM] = slot.start.split(':').map(Number);
             const [eH, eM] = slot.end.split(':').map(Number);
-            const cell = appState.schedule[`${i}_${day}`];
+            const cell = cur().schedule[`${i}_${day}`];
             const className = cell ? cell.name : slot.name;
 
             if (nowMins >= (sH*60+sM) && nowMins <= (eH*60+eM)) {
@@ -562,7 +682,7 @@
         
         for (let cIdx = 1; cIdx <= 5; cIdx++) {
           const key = `${rIdx}_${cIdx}`;
-          const cell = appState.schedule[key];
+          const cell = cur().schedule[key];
           
           if (isEditMode) {
             html += `<td class="p-1 sm:p-1.5 align-top h-16 sm:h-24 border-r border-slate-50 last:border-0 relative">
@@ -596,7 +716,7 @@
     function renderTasksAndEvents() {
       // 排序與渲染 Events
       const evCont = document.getElementById('events-container');
-      const sortedEvents = [...appState.events].sort((a,b) => new Date(a.date) - new Date(b.date));
+      const sortedEvents = [...cur().events].sort((a,b) => new Date(a.date) - new Date(b.date));
       
       if (sortedEvents.length === 0) {
         evCont.innerHTML = '<div class="text-center text-base opacity-80 py-4">目前沒有設定重要日程。</div>';
@@ -628,13 +748,13 @@
 
       // 排序與渲染 Tasks
       const tkCont = document.getElementById('tasks-container');
-      const sortedTasks = [...appState.tasks].sort((a,b) => new Date(a.date||'2099') - new Date(b.date||'2099'));
+      const sortedTasks = [...cur().tasks].sort((a,b) => new Date(a.date||'2099') - new Date(b.date||'2099'));
       
       if (sortedTasks.length === 0) {
         tkCont.innerHTML = '<div class="text-center py-8 text-slate-400 text-base">目前沒有任何任務，太棒了！</div>';
       } else {
         tkCont.innerHTML = sortedTasks.map(tk => `
-          <div class="flex items-center justify-between p-2.5 sm:p-3 rounded-xl border group transition ${tk.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:border-blue-200'}">
+          <div class="flex items-center justify-between p-2.5 sm:p-3 rounded-xl border group transition ${tk.completed ? 'bg-slate-50 border-slate-100' : 'bg-[#FFFDF8] border-slate-200 shadow-sm hover:border-blue-200'}">
             <div class="flex items-center gap-3 flex-1">
               <button onclick="toggleTask('${tk.id}')" class="min-w-[22px] w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${tk.completed ? 'bg-green-500 border-green-500' : 'border-slate-300'}">
                 ${tk.completed ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
@@ -671,8 +791,8 @@
       
       for(let i=1; i<=daysInMonth; i++) {
         const dStr = getLocalDateStr(new Date(year, month, i));
-        const hasEv = appState.events.some(e => e.date === dStr);
-        const hasTk = appState.tasks.some(t => t.date === dStr && !t.completed);
+        const hasEv = cur().events.some(e => e.date === dStr);
+        const hasTk = cur().tasks.some(t => t.date === dStr && !t.completed);
         const isToday = dStr === getLocalDateStr(new Date());
 
         grid.innerHTML += `
@@ -728,7 +848,7 @@
     }
 
     function saveSettings() {
-      appState.config.studentName = document.getElementById('input-school-name').value;
+      cur().name = document.getElementById('input-school-name').value;
       appState.config.ntfyTopic = document.getElementById('input-ntfy-topic').value;
       const days = parseInt(document.getElementById('input-reminder-days').value);
       appState.config.reminderDays = isNaN(days) ? 3 : Math.max(0, Math.min(30, days));
@@ -739,7 +859,7 @@
     let selectedColor = 'gray';
     function openCellModal(key) {
       editCellKey = key;
-      const cell = appState.schedule[key] || { name:'', teacher:'', room:'', color:'gray' };
+      const cell = cur().schedule[key] || { name:'', teacher:'', room:'', color:'gray' };
       document.getElementById('cell-name').value = cell.name;
       document.getElementById('cell-teacher').value = cell.teacher;
       document.getElementById('cell-room').value = cell.room;
@@ -762,9 +882,9 @@
     function saveCell() {
       const name = document.getElementById('cell-name').value;
       if (!name.trim()) {
-        delete appState.schedule[editCellKey];
+        delete cur().schedule[editCellKey];
       } else {
-        appState.schedule[editCellKey] = {
+        cur().schedule[editCellKey] = {
           name,
           teacher: document.getElementById('cell-teacher').value,
           room: document.getElementById('cell-room').value,
@@ -785,7 +905,7 @@
       setEventType(type);
 
       if (id) {
-        const item = type === 'event' ? appState.events.find(e=>e.id===id) : appState.tasks.find(t=>t.id===id);
+        const item = type === 'event' ? cur().events.find(e=>e.id===id) : cur().tasks.find(t=>t.id===id);
         document.getElementById('event-title').value = item.title;
         document.getElementById('event-date').value = item.date;
         document.getElementById('event-note').value = item.note || '';
@@ -809,13 +929,13 @@
       const btnT = document.getElementById('btn-type-task');
       const noteWrapper = document.getElementById('event-note-wrapper');
       if (type === 'event') {
-        btnE.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-white shadow-sm text-purple-600";
+        btnE.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-[#FFFDF8] shadow-sm text-purple-600";
         btnT.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition text-slate-500";
         document.getElementById('event-title-label').innerText = "重要日子名稱";
         document.getElementById('event-title').placeholder = "例如: 第一次期中考";
         noteWrapper.style.display = 'block';
       } else {
-        btnT.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-white shadow-sm text-amber-600";
+        btnT.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-[#FFFDF8] shadow-sm text-amber-600";
         btnE.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition text-slate-500";
         document.getElementById('event-title-label').innerText = "任務內容";
         document.getElementById('event-title').placeholder = "例如: 繳交學習歷程";
@@ -831,15 +951,15 @@
 
       if (editEventType === 'event') {
         if (editEventId) {
-          appState.events = appState.events.map(e => e.id === editEventId ? {...e, title, date, note} : e);
+          cur().events = cur().events.map(e => e.id === editEventId ? {...e, title, date, note} : e);
         } else {
-          appState.events.push({ id: Date.now().toString(), title, date, note, type: 'exam' });
+          cur().events.push({ id: Date.now().toString(), title, date, note, type: 'exam' });
         }
       } else {
         if (editEventId) {
-          appState.tasks = appState.tasks.map(t => t.id === editEventId ? {...t, title, date} : t);
+          cur().tasks = cur().tasks.map(t => t.id === editEventId ? {...t, title, date} : t);
         } else {
-          appState.tasks.push({ id: Date.now().toString(), title, date, completed: false });
+          cur().tasks.push({ id: Date.now().toString(), title, date, completed: false });
         }
       }
 
@@ -868,17 +988,17 @@
     }
 
     function toggleTask(id) {
-      appState.tasks = appState.tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
+      cur().tasks = cur().tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
       saveData();
     }
     function deleteTask(id) {
       if (!window.confirm('確定要刪除這個待辦事項嗎？')) return;
-      appState.tasks = appState.tasks.filter(t => t.id !== id);
+      cur().tasks = cur().tasks.filter(t => t.id !== id);
       saveData();
     }
     function deleteEvent(id) {
       if (!window.confirm('確定要刪除這個重要日程嗎？')) return;
-      appState.events = appState.events.filter(e => e.id !== id);
+      cur().events = cur().events.filter(e => e.id !== id);
       saveData();
     }
 
@@ -991,8 +1111,8 @@
         return dl >= 0 && dl <= days;
       };
 
-      const upcomingEvents = appState.events.filter(e => inRange(e.date));
-      const upcomingTasks = appState.tasks.filter(t => !t.completed && t.date && inRange(t.date));
+      const upcomingEvents = cur().events.filter(e => inRange(e.date));
+      const upcomingTasks = cur().tasks.filter(t => !t.completed && t.date && inRange(t.date));
 
       if (upcomingEvents.length + upcomingTasks.length === 0) {
         localStorage.setItem('hs_last_auto_notify', todayStr);
@@ -1036,13 +1156,26 @@
       reader.onload = (evt) => {
         try {
           const data = JSON.parse(evt.target.result);
-          if(data.schedule) appState.schedule = data.schedule;
-          if(data.tasks) appState.tasks = data.tasks;
-          if(data.events) appState.events = data.events;
-          if(data.config) appState.config = Object.assign({ studentName: '', ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config);
+          if (data.students) {
+            // 新版格式（含哥哥/弟弟兩人）
+            appState.activeChild = data.activeChild === 'B' ? 'B' : 'A';
+            appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [] }, data.students.A || {});
+            appState.students.B = Object.assign({ name: '弟弟', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
+          } else {
+            // 舊版格式：匯入到目前選取的孩子身上
+            if(data.schedule) cur().schedule = data.schedule;
+            if(data.tasks) cur().tasks = data.tasks;
+            if(data.events) cur().events = data.events;
+            if(data.config && data.config.studentName) cur().name = data.config.studentName;
+          }
+          if(data.config) appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, {
+            ntfyTopic: data.config.ntfyTopic, soundOn: data.config.soundOn, autoNotify: data.config.autoNotify, reminderDays: data.config.reminderDays
+          });
           alert('匯入成功！');
-          document.getElementById('input-school-name').value = appState.config.studentName;
+          document.getElementById('input-school-name').value = cur().name;
           document.getElementById('input-ntfy-topic').value = appState.config.ntfyTopic;
+          renderChildSwitcher();
+      renderThemePicker();
           saveData();
         } catch (err) { alert('檔案格式錯誤！'); }
       };
