@@ -9,7 +9,9 @@
   <!-- 引入 Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- 設置 iPhone 桌面圖示 -->
-  <link rel="apple-touch-icon" href="custom-icon.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <style>
     body { -webkit-tap-highlight-color: transparent; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -137,7 +139,27 @@
             <h4 class="font-bold text-base text-slate-700 mb-2 flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5"></i> Ntfy 手機推播</h4>
             <p class="text-xs sm:text-sm text-slate-500 mb-3">透過 ntfy.sh 免費接收通知。在手機下載 ntfy App 並訂閱下方頻道名稱即可連動。</p>
             <input id="input-ntfy-topic" type="text" placeholder="輸入頻道密語 (例: john_hs_999)" onchange="saveSettings()" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"/>
+
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-bold text-slate-600">打開網頁自動推播</span>
+              <button onclick="toggleAutoNotify()" id="btn-autonotify-toggle" class="px-3 py-1.5 rounded-lg text-sm font-bold bg-blue-100 text-blue-600">開啟</button>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+              <label class="text-sm font-bold text-slate-600" for="input-reminder-days">提前幾天提醒</label>
+              <input id="input-reminder-days" type="number" min="0" max="30" onchange="saveSettings()" class="w-20 p-2 bg-white border border-slate-200 rounded-lg text-base text-center font-bold"/>
+            </div>
+
             <button onclick="testNtfy()" class="w-full text-sm bg-amber-500 text-white px-3 py-2 rounded-lg font-bold shadow-sm">發送測試推播</button>
+          </div>
+
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <h4 class="font-bold text-base text-slate-700 mb-2 flex items-center gap-2"><i data-lucide="alarm-clock" class="w-5 h-5"></i> 排程推播（指定日期時間）</h4>
+            <p class="text-xs sm:text-sm text-slate-500 mb-3">設定好之後，就算沒開網頁、手機沒開機，時間到 ntfy 伺服器也會自動幫你推播。<br>（免費版建議排程時間不要超過未來 3 天，太久之後可能不會送達）</p>
+            <label class="text-sm font-bold text-slate-500 mb-1 block">日期與時間</label>
+            <input id="schedule-datetime" type="datetime-local" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-base mb-3"/>
+            <label class="text-sm font-bold text-slate-500 mb-1 block">提醒內容</label>
+            <input id="schedule-message" type="text" placeholder="例如：段考第一節即將開始" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-base mb-3"/>
+            <button onclick="scheduleNtfy()" class="w-full text-sm bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow-sm">設定排程推播</button>
           </div>
         </div>
       </div>
@@ -280,7 +302,7 @@
       schedule: {},
       tasks: [],
       events: [],
-      config: { studentName: '', ntfyTopic: '', soundOn: true }
+      config: { studentName: '', ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
     };
 
     let isEditMode = false;
@@ -336,6 +358,23 @@
       }
     }
 
+    function toggleAutoNotify() {
+      appState.config.autoNotify = !appState.config.autoNotify;
+      renderAutoNotifyToggle();
+      saveData();
+    }
+    function renderAutoNotifyToggle() {
+      const btn = document.getElementById('btn-autonotify-toggle');
+      if (!btn) return;
+      if (appState.config.autoNotify) {
+        btn.innerText = '開啟';
+        btn.className = "px-3 py-1.5 rounded-lg text-sm font-bold bg-blue-100 text-blue-600";
+      } else {
+        btn.innerText = '關閉';
+        btn.className = "px-3 py-1.5 rounded-lg text-sm font-bold bg-slate-100 text-slate-500";
+      }
+    }
+
     // ==========================================
     // 長按編輯上方姓名/班級
     // ==========================================
@@ -381,7 +420,7 @@
           appState.schedule = Object.keys(data.schedule || {}).length > 0 ? data.schedule : JSON.parse(JSON.stringify(FULL_SCHEDULE));
           appState.tasks = data.tasks || [];
           appState.events = data.events || [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
-          appState.config = Object.assign({ studentName: '', ntfyTopic: '', soundOn: true }, data.config || {});
+          appState.config = Object.assign({ studentName: '', ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config || {});
         } catch(e) { resetData(false); }
       } else {
         resetData(false);
@@ -390,8 +429,11 @@
       // 更新 UI Input
       document.getElementById('input-school-name').value = appState.config.studentName;
       document.getElementById('input-ntfy-topic').value = appState.config.ntfyTopic;
+      document.getElementById('input-reminder-days').value = appState.config.reminderDays;
       renderSoundToggle();
+      renderAutoNotifyToggle();
       renderAll();
+      autoNotifyIfNeeded();
     }
 
     function saveData() {
@@ -417,6 +459,7 @@
       renderTasksAndEvents();
       renderCalendar();
       renderSoundToggle();
+      renderAutoNotifyToggle();
       lucide.createIcons();
     }
 
@@ -679,6 +722,8 @@
     function saveSettings() {
       appState.config.studentName = document.getElementById('input-school-name').value;
       appState.config.ntfyTopic = document.getElementById('input-ntfy-topic').value;
+      const days = parseInt(document.getElementById('input-reminder-days').value);
+      appState.config.reminderDays = isNaN(days) ? 3 : Math.max(0, Math.min(30, days));
       saveData();
     }
 
@@ -814,13 +859,9 @@
     // ==========================================
     // 推播與匯出功能
     // ==========================================
-    async function triggerNtfy(title, message) {
+    async function sendNtfy(title, message) {
       const topic = appState.config.ntfyTopic;
-      if (!topic) {
-        alert('請先在設定中輸入 Ntfy 頻道名稱！');
-        switchTab('settings');
-        return;
-      }
+      if (!topic) return false;
       try {
         const res = await fetch('https://ntfy.sh/', {
           method: 'POST',
@@ -832,11 +873,111 @@
             tags: ['books', 'warning']
           })
         });
-        if (!res.ok) throw new Error('推播失敗，狀態碼 ' + res.status);
-        alert('推播已發送至手機！');
-      } catch (e) { alert('推播發送失敗：' + e.message); }
+        return res.ok;
+      } catch (e) { return false; }
+    }
+
+    async function triggerNtfy(title, message) {
+      const topic = appState.config.ntfyTopic;
+      if (!topic) {
+        alert('請先在設定中輸入 Ntfy 頻道名稱！');
+        switchTab('settings');
+        return;
+      }
+      const ok = await sendNtfy(title, message);
+      if (ok) alert('推播已發送至手機！');
+      else alert('推播發送失敗，請確認頻道名稱與網路連線。');
     }
     function testNtfy() { triggerNtfy('測試通知', '如果手機有響，代表連動成功！'); }
+
+    async function scheduleNtfy() {
+      const topic = appState.config.ntfyTopic;
+      if (!topic) {
+        alert('請先在設定中輸入 Ntfy 頻道名稱！');
+        return;
+      }
+      const dtVal = document.getElementById('schedule-datetime').value;
+      const msg = document.getElementById('schedule-message').value.trim();
+      if (!dtVal) return alert('請選擇日期與時間！');
+      if (!msg) return alert('請輸入提醒內容！');
+
+      const target = new Date(dtVal);
+      const now = new Date();
+      if (isNaN(target.getTime()) || target <= now) {
+        return alert('請選擇未來的日期與時間！');
+      }
+
+      const unixSeconds = Math.floor(target.getTime() / 1000);
+
+      try {
+        const res = await fetch('https://ntfy.sh/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: topic,
+            message: msg,
+            title: '[課表提醒] 排程通知',
+            tags: ['alarm_clock'],
+            delay: String(unixSeconds)
+          })
+        });
+        if (!res.ok) throw new Error('狀態碼 ' + res.status);
+        const dateLabel = target.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        alert(`已設定排程！將於 ${dateLabel} 自動推播。`);
+        document.getElementById('schedule-message').value = '';
+      } catch (e) {
+        alert('排程設定失敗，請確認頻道名稱與網路連線：' + e.message);
+      }
+    }
+
+    // 打開網頁時自動檢查「未來 N 天內」有沒有事，有的話自動推播一次（每天最多一次）
+    async function autoNotifyIfNeeded() {
+      if (!appState.config.autoNotify) return;
+      if (!appState.config.ntfyTopic) return;
+
+      const todayDate = new Date();
+      todayDate.setHours(0,0,0,0);
+      const todayStr = getLocalDateStr(todayDate);
+      if (localStorage.getItem('hs_last_auto_notify') === todayStr) return;
+
+      const days = Math.max(0, parseInt(appState.config.reminderDays) || 0);
+
+      const daysLeftOf = (dateStr) => {
+        const d = new Date(dateStr + 'T00:00:00');
+        return Math.round((d - todayDate) / (1000*60*60*24));
+      };
+
+      const inRange = (dateStr) => {
+        const dl = daysLeftOf(dateStr);
+        return dl >= 0 && dl <= days;
+      };
+
+      const upcomingEvents = appState.events.filter(e => inRange(e.date));
+      const upcomingTasks = appState.tasks.filter(t => !t.completed && t.date && inRange(t.date));
+
+      if (upcomingEvents.length + upcomingTasks.length === 0) {
+        localStorage.setItem('hs_last_auto_notify', todayStr);
+        return;
+      }
+
+      const labelFor = (dateStr) => {
+        const dl = daysLeftOf(dateStr);
+        if (dl === 0) return '今天';
+        if (dl === 1) return '明天';
+        return `${dl}天後`;
+      };
+
+      const lines = [];
+      upcomingEvents
+        .sort((a,b) => new Date(a.date) - new Date(b.date))
+        .forEach(e => lines.push(`🔥 ${labelFor(e.date)}：${e.title}`));
+      upcomingTasks
+        .sort((a,b) => new Date(a.date) - new Date(b.date))
+        .forEach(t => lines.push(`📝 ${labelFor(t.date)}到期：${t.title}`));
+
+      const ok = await sendNtfy(`未來 ${days} 天內提醒`, lines.join('\n'));
+      if (ok) localStorage.setItem('hs_last_auto_notify', todayStr);
+    }
 
     function exportData() {
       const dataStr = JSON.stringify(appState, null, 2);
@@ -859,7 +1000,7 @@
           if(data.schedule) appState.schedule = data.schedule;
           if(data.tasks) appState.tasks = data.tasks;
           if(data.events) appState.events = data.events;
-          if(data.config) appState.config = Object.assign({ studentName: '', ntfyTopic: '', soundOn: true }, data.config);
+          if(data.config) appState.config = Object.assign({ studentName: '', ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config);
           alert('匯入成功！');
           document.getElementById('input-school-name').value = appState.config.studentName;
           document.getElementById('input-ntfy-topic').value = appState.config.ntfyTopic;
