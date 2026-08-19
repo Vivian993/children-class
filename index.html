@@ -28,6 +28,7 @@
         <div class="flex flex-col">
           <span id="current-time-display" class="text-xs font-semibold opacity-75">--:--</span>
           <span id="status-message" class="text-sm sm:text-base font-bold truncate max-w-[200px] sm:max-w-md">載入中...</span>
+          <span id="status-submessage" class="text-xs sm:text-sm font-medium truncate max-w-[200px] sm:max-w-md"></span>
         </div>
       </div>
       <div id="display-school-name"
@@ -229,6 +230,10 @@
           <label class="text-sm font-bold text-slate-500 mb-1 block">日期</label>
           <input id="event-date" type="date" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold text-slate-700"/>
         </div>
+        <div id="event-note-wrapper">
+          <label class="text-sm font-bold text-slate-500 mb-1 block">考試時間與科目 (選填，會顯示在當天上方)</label>
+          <textarea id="event-note" rows="3" placeholder="例如：&#10;08:10-09:00 數學&#10;09:10-10:00 英文" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"></textarea>
+        </div>
       </div>
       <button onclick="saveEvent()" class="w-full mt-6 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 text-base">儲存</button>
     </div>
@@ -290,11 +295,11 @@
     // 音效
     // ==========================================
     let audioCtx = null;
-    function playClickSound() {
+    async function playClickSound() {
       if (!appState.config.soundOn) return;
       try {
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (audioCtx.state === 'suspended') { await audioCtx.resume(); }
         const o = audioCtx.createOscillator();
         const g = audioCtx.createGain();
         o.connect(g); g.connect(audioCtx.destination);
@@ -307,16 +312,17 @@
         o.stop(audioCtx.currentTime + 0.12);
       } catch(e) {}
     }
-    // 全域按鍵音效：所有按鈕點擊都會發出聲音
+    // 全域按鍵音效：所有按鈕點擊都會發出聲音（開關鍵本身自己處理，避免搶拍）
     document.addEventListener('click', function(e) {
-      if (e.target.closest('button')) playClickSound();
+      if (e.target.closest('button') && !e.target.closest('#btn-sound-toggle')) playClickSound();
     }, true);
 
     function toggleSound() {
-      appState.config.soundOn = !appState.config.soundOn;
+      const turningOn = !appState.config.soundOn;
+      appState.config.soundOn = turningOn;
       renderSoundToggle();
       saveData();
-      if (appState.config.soundOn) playClickSound();
+      if (turningOn) playClickSound();
     }
     function renderSoundToggle() {
       const btn = document.getElementById('btn-sound-toggle');
@@ -425,13 +431,40 @@
       const island = document.getElementById('dynamic-island');
       const iconBg = document.getElementById('status-icon-bg');
       const msg = document.getElementById('status-message');
+      const sub = document.getElementById('status-submessage');
 
       if (todayExam) {
         island.className = "bg-amber-50 px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-amber-200 text-amber-900 transition-colors";
         iconBg.className = "p-2 rounded-xl flex items-center justify-center bg-amber-500 text-white animate-bounce";
         document.getElementById('status-icon').setAttribute('data-lucide', 'alert-triangle');
-        msg.innerText = `🔥 今日重點：${todayExam.title}！`;
+        msg.innerText = `🔥 今天是段考日：${todayExam.title}`;
+
+        sub.innerText = '';
+        if (todayExam.note) {
+          const lines = todayExam.note.split('\n').map(l => l.trim()).filter(Boolean);
+          const nowMins = now.getHours() * 60 + now.getMinutes();
+          let current = null, next = null;
+          for (const line of lines) {
+            const m = line.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*(.*)/);
+            if (!m) continue;
+            const sMins = parseInt(m[1]) * 60 + parseInt(m[2]);
+            const eMins = parseInt(m[3]) * 60 + parseInt(m[4]);
+            const subject = m[5] || '';
+            if (nowMins >= sMins && nowMins <= eMins) { current = { subject, raw: line }; break; }
+            if (nowMins < sMins && !next) { next = { subject, sMins, raw: line }; }
+          }
+          if (current) {
+            sub.innerText = `📝 現在考：${current.subject || current.raw}`;
+          } else if (next) {
+            const h = String(Math.floor(next.sMins / 60)).padStart(2, '0');
+            const mnt = String(next.sMins % 60).padStart(2, '0');
+            sub.innerText = `⏰ 下一科：${next.subject || next.raw} (${h}:${mnt})`;
+          } else {
+            sub.innerText = lines[0] || '';
+          }
+        }
       } else {
+        sub.innerText = '';
         island.className = "bg-white px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors";
         iconBg.className = "p-2 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600";
         document.getElementById('status-icon').setAttribute('data-lucide', 'bell');
@@ -702,9 +735,11 @@
         const item = type === 'event' ? appState.events.find(e=>e.id===id) : appState.tasks.find(t=>t.id===id);
         document.getElementById('event-title').value = item.title;
         document.getElementById('event-date').value = item.date;
+        document.getElementById('event-note').value = item.note || '';
       } else {
         document.getElementById('event-title').value = '';
         document.getElementById('event-date').value = date;
+        document.getElementById('event-note').value = '';
       }
 
       const modal = document.getElementById('modal-event');
@@ -717,29 +752,33 @@
       editEventType = type;
       const btnE = document.getElementById('btn-type-event');
       const btnT = document.getElementById('btn-type-task');
+      const noteWrapper = document.getElementById('event-note-wrapper');
       if (type === 'event') {
         btnE.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-white shadow-sm text-purple-600";
         btnT.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition text-slate-500";
         document.getElementById('event-title-label').innerText = "重要日子名稱";
         document.getElementById('event-title').placeholder = "例如: 第一次期中考";
+        noteWrapper.style.display = 'block';
       } else {
         btnT.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition bg-white shadow-sm text-amber-600";
         btnE.className = "flex-1 py-1.5 text-sm font-bold rounded-lg transition text-slate-500";
         document.getElementById('event-title-label').innerText = "任務內容";
         document.getElementById('event-title').placeholder = "例如: 繳交學習歷程";
+        noteWrapper.style.display = 'none';
       }
     }
 
     function saveEvent() {
       const title = document.getElementById('event-title').value;
       const date = document.getElementById('event-date').value;
+      const note = document.getElementById('event-note').value;
       if (!title.trim()) return alert("請輸入標題！");
 
       if (editEventType === 'event') {
         if (editEventId) {
-          appState.events = appState.events.map(e => e.id === editEventId ? {...e, title, date} : e);
+          appState.events = appState.events.map(e => e.id === editEventId ? {...e, title, date, note} : e);
         } else {
-          appState.events.push({ id: Date.now().toString(), title, date, type: 'exam' });
+          appState.events.push({ id: Date.now().toString(), title, date, note, type: 'exam' });
         }
       } else {
         if (editEventId) {
@@ -756,8 +795,16 @@
       appState.tasks = appState.tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
       saveData();
     }
-    function deleteTask(id) { appState.tasks = appState.tasks.filter(t => t.id !== id); saveData(); }
-    function deleteEvent(id) { appState.events = appState.events.filter(e => e.id !== id); saveData(); }
+    function deleteTask(id) {
+      if (!window.confirm('確定要刪除這個待辦事項嗎？')) return;
+      appState.tasks = appState.tasks.filter(t => t.id !== id);
+      saveData();
+    }
+    function deleteEvent(id) {
+      if (!window.confirm('確定要刪除這個重要日程嗎？')) return;
+      appState.events = appState.events.filter(e => e.id !== id);
+      saveData();
+    }
 
     function closeModal(id) {
       document.getElementById(id+'-content').classList.add('scale-95');
