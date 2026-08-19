@@ -1,697 +1,743 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Calendar as CalendarIcon, Clock, Settings, Edit3, Save, Download, Upload, 
-  CheckSquare, Bell, Trash2, Plus, AlertCircle, X, Check, ChevronLeft, ChevronRight, Edit2, AlertTriangle
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>北科復工 - 智慧課表與行事曆</title>
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入 Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- 設置 iPhone 桌面圖示 -->
+  <link rel="apple-touch-icon" href="custom-icon.png">
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans pb-20 select-none sm:select-auto">
 
-const TIME_SLOTS = [
-  { id: 0, name: '早自習', start: '07:30', end: '07:50' },
-  { id: 1, name: '第一節', start: '08:10', end: '09:00' },
-  { id: 2, name: '第二節', start: '09:10', end: '10:00' },
-  { id: 3, name: '第三節', start: '10:10', end: '11:00' },
-  { id: 4, name: '第四節', start: '11:10', end: '12:00' },
-  { id: 5, name: '第五節', start: '13:10', end: '14:00' },
-  { id: 6, name: '第六節', start: '14:10', end: '15:00' },
-  { id: 7, name: '第七節', start: '15:15', end: '16:05' },
-  { id: 8, name: '第八節', start: '16:10', end: '17:00' },
-];
-
-const COLORS = [
-  { id: 'red', class: 'bg-red-100 text-red-900 border-red-200' },
-  { id: 'blue', class: 'bg-blue-100 text-blue-900 border-blue-200' },
-  { id: 'green', class: 'bg-green-100 text-green-900 border-green-200' },
-  { id: 'yellow', class: 'bg-amber-100 text-amber-900 border-amber-200' },
-  { id: 'purple', class: 'bg-purple-100 text-purple-900 border-purple-200' },
-  { id: 'indigo', class: 'bg-indigo-100 text-indigo-900 border-indigo-200' },
-  { id: 'pink', class: 'bg-pink-100 text-pink-900 border-pink-200' },
-  { id: 'teal', class: 'bg-teal-100 text-teal-900 border-teal-200' },
-  { id: 'gray', class: 'bg-slate-100 text-slate-800 border-slate-200' },
-];
-
-const FULL_SCHEDULE = {
-  "1_1": { name: '國語文', teacher: '陳姿穎', color: 'red' },
-  "2_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' },
-  "3_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' },
-  "4_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' },
-  "5_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' },
-  "6_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' },
-  "7_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' },
-  "8_1": { name: '數位電路選', teacher: '張偉勤', color: 'blue' },
-
-  "1_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' },
-  "2_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' },
-  "3_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' },
-  "4_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' },
-  "5_2": { name: '地理', teacher: '邱坤豪', color: 'purple' },
-  "6_2": { name: '地理', teacher: '邱坤豪', color: 'purple' },
-  "7_2": { name: '健康與護理', teacher: '陸淑芬', color: 'pink' },
-  "8_2": { name: '基本電學選', teacher: '吳育智', color: 'teal' },
-
-  "1_3": { name: '體育', teacher: '莊佳容', color: 'green' },
-  "2_3": { name: '體育', teacher: '莊佳容', color: 'green' },
-  "3_3": { name: '手語/閩南語', teacher: '范文芳/宋麗華', color: 'gray' },
-  "4_3": { name: '基本電學', teacher: '吳育智', color: 'teal' },
-  "5_3": { name: '班會', teacher: '林宗平', color: 'gray' },
-  "6_3": { name: '彈性學習時間', teacher: '', color: 'gray' },
-  "7_3": { name: '團體活動時間', teacher: '', color: 'gray' },
-
-  "1_4": { name: '數學', teacher: '林佳良', color: 'blue' },
-  "2_4": { name: '數學', teacher: '林佳良', color: 'blue' },
-  "3_4": { name: '基本電學', teacher: '吳育智', color: 'teal' },
-  "4_4": { name: '基本電學', teacher: '吳育智', color: 'teal' },
-  "5_4": { name: '作文', teacher: '陳姿穎', color: 'red' },
-  "6_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' },
-  "7_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' },
-
-  "1_5": { name: '國語文', teacher: '陳姿穎', color: 'red' },
-  "2_5": { name: '國語文', teacher: '陳姿穎', color: 'red' },
-  "3_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' },
-  "4_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' },
-  "5_5": { name: '數學', teacher: '林佳良', color: 'blue' },
-  "6_5": { name: '數學', teacher: '林佳良', color: 'blue' },
-  "7_5": { name: '英語聽講', teacher: '林宗平', color: 'yellow' },
-  "8_5": { name: '英文選', teacher: '林宗平', color: 'yellow' },
-};
-
-const getLocalDateStr = (d) => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState('schedule'); 
-  const [schedule, setSchedule] = useState(FULL_SCHEDULE);
-  const [tasks, setTasks] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [config, setConfig] = useState({ ntfyTopic: '', studentName: '北科復工' });
-  const [isEditMode, setIsEditMode] = useState(false);
-  
-  const [selectedCell, setSelectedCell] = useState(null);
-  const [editFormData, setEditFormData] = useState({ name: '', teacher: '', room: '', color: 'gray' });
-  
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [eventForm, setEventForm] = useState({ id: null, type: 'event', title: '', date: '' });
-
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [currentMonthView, setCurrentMonthView] = useState(new Date());
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('hs_schedule_data_v6');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        setSchedule(Object.keys(data.schedule || {}).length > 0 ? data.schedule : FULL_SCHEDULE);
-        setTasks(data.tasks || []);
-        setEvents(data.events || [
-          { id: 'init-1', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }
-        ]);
-        setConfig(data.config || { ntfyTopic: '', studentName: '北科復工' });
-      } catch (e) { 
-        setSchedule(FULL_SCHEDULE); 
-      }
-    } else {
-        setSchedule(FULL_SCHEDULE);
-        setEvents([
-          { id: 'init-1', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }
-        ]);
-        setConfig({ ntfyTopic: '', studentName: '北科復工' });
-    }
-    setIsInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (isInitialized) {
-        const data = { schedule, tasks, events, config };
-        localStorage.setItem('hs_schedule_data_v6', JSON.stringify(data));
-    }
-  }, [schedule, tasks, events, config, isInitialized]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // 智慧動態島：檢查今天是否有考試或重要日程，優先顯示提醒
-  const getSmartStatus = () => {
-    const todayStr = getLocalDateStr(currentTime);
-    const todayExam = events.find(e => e.date === todayStr);
-    if (todayExam) {
-      return { type: 'exam', msg: `🔥 今日重點：${todayExam.title}！` };
-    }
-
-    const day = currentTime.getDay();
-    if (day === 0 || day === 6) return { type: 'normal', msg: '週末放假中 🎉' };
-
-    const nowMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-    
-    for (let i = 0; i < TIME_SLOTS.length; i++) {
-      const slot = TIME_SLOTS[i];
-      const [startH, startM] = slot.start.split(':').map(Number);
-      const [endH, endM] = slot.end.split(':').map(Number);
-      const startMins = startH * 60 + startM;
-      const endMins = endH * 60 + endM;
-
-      const cellData = schedule[`${i}_${day}`];
-
-      if (nowMinutes >= startMins && nowMinutes <= endMins) {
-        return { type: 'normal', msg: `正在上：${cellData ? cellData.name : slot.name}` };
-      }
-      if (nowMinutes < startMins) {
-        const diff = startMins - nowMinutes;
-        return { type: 'normal', msg: `下堂課：${cellData ? cellData.name : slot.name} (${diff} 分鐘後)` };
-      }
-    }
-    return { type: 'normal', msg: '今日課程已結束 🎒' };
-  };
-
-  const handleCellClick = (row, col) => {
-    const key = `${row}_${col}`;
-    const cellData = schedule[key] || { name: '', teacher: '', room: '', color: 'gray' };
-    setSelectedCell({ row, col, key });
-    setEditFormData(cellData);
-  };
-
-  const handleSaveCell = () => {
-    if (!selectedCell) return;
-    setSchedule(prev => {
-      const newSchedule = { ...prev };
-      if (!editFormData.name) {
-        delete newSchedule[selectedCell.key];
-      } else {
-        newSchedule[selectedCell.key] = editFormData;
-      }
-      return newSchedule;
-    });
-    setSelectedCell(null);
-  };
-
-  const handleDateClick = (dateObj) => {
-    const dateStr = getLocalDateStr(dateObj);
-    setEventForm({ id: null, type: 'event', title: '', date: dateStr });
-    setShowEventModal(true);
-  };
-
-  const handleEditEvent = (ev, type) => {
-    setEventForm({ id: ev.id, type: type, title: ev.title, date: ev.date || getLocalDateStr(new Date()) });
-    setShowEventModal(true);
-  };
-
-  const handleSaveEventForm = () => {
-    if (!eventForm.title.trim()) return alert("請輸入標題！");
-    
-    if (eventForm.type === 'event') {
-      if (eventForm.id) {
-        setEvents(events.map(e => e.id === eventForm.id ? { ...e, title: eventForm.title, date: eventForm.date } : e));
-      } else {
-        setEvents([...events, { id: Date.now().toString(), title: eventForm.title, date: eventForm.date, type: 'exam' }]);
-      }
-    } else {
-      if (eventForm.id) {
-        setTasks(tasks.map(t => t.id === eventForm.id ? { ...t, title: eventForm.title, date: eventForm.date } : t));
-      } else {
-        setTasks([...tasks, { id: Date.now().toString(), title: eventForm.title, date: eventForm.date, completed: false }]);
-      }
-    }
-    setShowEventModal(false);
-  };
-
-  const renderCalendar = () => {
-    const year = currentMonthView.getFullYear();
-    const month = currentMonthView.getMonth();
-    
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDay = new Date(year, month, 1).getDay();
-
-    const daysArray = [];
-    for (let i = 0; i < firstDay; i++) daysArray.push(null);
-    for (let i = 1; i <= daysInMonth; i++) daysArray.push(new Date(year, month, i));
-
-    const prevMonth = () => setCurrentMonthView(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentMonthView(new Date(year, month + 1, 1));
-
-    return (
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
-        <div className="flex justify-between items-center mb-4 text-slate-700">
-          <button onClick={prevMonth} className="p-1.5 hover:bg-slate-100 rounded-lg"><ChevronLeft size={20}/></button>
-          <span className="font-bold text-lg">{year}年 {month + 1}月</span>
-          <button onClick={nextMonth} className="p-1.5 hover:bg-slate-100 rounded-lg"><ChevronRight size={20}/></button>
+  <!-- 動態狀態列 (動態島) -->
+  <div id="dynamic-island" class="bg-white px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="status-icon-bg" class="p-2 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600">
+          <i id="status-icon" data-lucide="bell" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 mb-2">
-          {['日','一','二','三','四','五','六'].map(d=><div key={d}>{d}</div>)}
-        </div>
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
-          {daysArray.map((day, idx) => {
-            if (!day) return <div key={`empty-${idx}`} className="p-2"></div>;
-            
-            const dateStr = getLocalDateStr(day);
-            const hasEvent = events.some(e => e.date === dateStr);
-            const hasTask = tasks.some(t => t.date === dateStr && !t.completed);
-            const isToday = dateStr === getLocalDateStr(currentTime);
-
-            return (
-              <button 
-                key={dateStr}
-                onClick={() => handleDateClick(day)}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl transition hover:bg-blue-50/50 relative aspect-square ${
-                  isToday ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'
-                }`}
-              >
-                <span className={`text-sm ${isToday ? 'text-blue-700 font-bold' : 'text-slate-600 font-medium'}`}>
-                  {day.getDate()}
-                </span>
-                <div className="flex gap-1 mt-1">
-                  {hasEvent && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm" title="有考試/重要日程"></span>}
-                  {hasTask && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-sm" title="有待辦任務"></span>}
-                </div>
-              </button>
-            )
-          })}
+        <div class="flex flex-col">
+          <span id="current-time-display" class="text-[10px] font-semibold opacity-75">--:--</span>
+          <span id="status-message" class="text-xs sm:text-sm font-bold truncate max-w-[200px] sm:max-w-md">載入中...</span>
         </div>
       </div>
-    );
-  };
-
-  const sendNtfy = async (title, message) => {
-    if (!config.ntfyTopic) {
-      alert('請先在設定中輸入 Ntfy 頻道名稱！');
-      setActiveTab('settings');
-      return;
-    }
-    try {
-      await fetch(`https://ntfy.sh/${config.ntfyTopic}`, {
-        method: 'POST',
-        headers: { 'Title': `[課表助理] ${title}`, 'Tags': 'books,warning' },
-        body: message
-      });
-      alert('推播已發送至手機！');
-    } catch (e) {
-      alert('推播發送失敗。');
-    }
-  };
-
-  if (!isInitialized) return null;
-  const smartStatus = getSmartStatus();
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
-
-      {/* 智慧動態狀態列 */}
-      <div className={`px-4 py-3 shadow-sm sticky top-0 z-30 border-b transition-colors ${
-        smartStatus.type === 'exam' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-slate-200'
-      }`}>
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl flex items-center justify-center ${
-              smartStatus.type === 'exam' ? 'bg-amber-500 text-white animate-bounce' : 'bg-blue-100 text-blue-600'
-            }`}>
-              {smartStatus.type === 'exam' ? <AlertTriangle size={18} /> : <Bell size={18} />}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-semibold opacity-75">{currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-              <span className="text-sm font-bold truncate max-w-[220px] sm:max-w-md">{smartStatus.msg}</span>
-            </div>
-          </div>
-          <div className="font-bold text-base sm:text-lg text-slate-800 tracking-wider">
-            {config.studentName || '未命名課表'}
-          </div>
-        </div>
+      <div id="display-school-name" class="font-bold text-sm sm:text-lg text-slate-800 tracking-wider hidden sm:block">
+        北科復工
       </div>
-
-      <main className="max-w-5xl mx-auto p-2 sm:p-4 mt-2">
-        
-        {/* ================== 課表分頁 ================== */}
-        {activeTab === 'schedule' && (
-          <div className="space-y-4 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-              <h2 className="font-bold flex items-center gap-2 text-slate-700">
-                <CalendarIcon size={18} /> 本週課表
-              </h2>
-              <button 
-                onClick={() => setIsEditMode(!isEditMode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                  isEditMode ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {isEditMode ? <><Check size={14}/> 完成編輯</> : <><Edit3 size={14}/> 編輯模式</>}
-              </button>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto relative">
-              {isEditMode && <div className="absolute inset-0 bg-amber-500/5 border-2 border-amber-400 pointer-events-none rounded-2xl z-10"></div>}
-              <table className="w-full text-center border-collapse min-w-[650px]">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
-                    <th className="py-2.5 w-16 border-r border-slate-200 font-medium">時間</th>
-                    {['一', '二', '三', '四', '五'].map(d => <th key={d} className="py-2.5 w-[18%] font-bold text-slate-700">{d}</th>)}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {TIME_SLOTS.map((slot, rowIndex) => (
-                    <tr key={slot.id} className={rowIndex === 4 ? "border-b-4 border-slate-200" : ""}>
-                      <td className="py-1.5 border-r border-slate-200 bg-slate-50/50">
-                        <div className="text-xs font-bold text-slate-700">{slot.name}</div>
-                        <div className="text-[9px] text-slate-400">{slot.start}</div>
-                      </td>
-                      {[1, 2, 3, 4, 5].map(colIndex => {
-                        const key = `${rowIndex}_${colIndex}`;
-                        const cell = schedule[key];
-                        const colorObj = cell ? COLORS.find(c => c.id === cell.color) || COLORS[8] : null;
-                        
-                        return (
-                          <td key={colIndex} className="p-1 sm:p-1.5 align-top h-14 sm:h-20 border-r border-slate-50 last:border-0 relative">
-                            {isEditMode ? (
-                              <div onClick={() => handleCellClick(rowIndex, colIndex)}
-                                className={`w-full h-full rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition ${cell ? colorObj.class : 'border-slate-300 hover:bg-slate-50'}`}
-                              >
-                                {cell ? (
-                                  <div className="font-bold text-[11px] sm:text-xs leading-tight line-clamp-1">{cell.name}</div>
-                                ) : (
-                                  <Plus size={16} className="text-slate-400" />
-                                )}
-                              </div>
-                            ) : (
-                              cell ? (
-                                <div className={`w-full h-full rounded-xl p-1.5 border flex flex-col justify-start text-left shadow-sm overflow-hidden ${colorObj.class}`}>
-                                  <div className="font-bold text-[11px] sm:text-sm leading-tight tracking-tight mb-0.5 line-clamp-2">{cell.name}</div>
-                                  <div className="text-[9px] sm:text-[10px] opacity-80 leading-tight truncate">{cell.teacher}</div>
-                                  {cell.room && <div className="text-[8px] sm:text-[9px] opacity-70 truncate mt-auto pt-0.5"><Clock size={8} className="inline mr-0.5"/>{cell.room}</div>}
-                                </div>
-                              ) : (
-                                rowIndex === 0 ? (
-                                    <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300 italic bg-slate-50/30 rounded-xl">晨讀</div>
-                                ) : (
-                                    <div className="w-full h-full rounded-xl border border-dashed border-slate-100/50 bg-slate-50/20"></div>
-                                )
-                              )
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ================== 任務/行事曆分頁 ================== */}
-        {activeTab === 'tasks' && (
-          <div className="space-y-4 max-w-2xl mx-auto animate-in fade-in duration-300">
-            {renderCalendar()}
-
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-md relative">
-              <div className="flex justify-between items-center mb-4 opacity-90">
-                <h3 className="font-bold flex items-center gap-2"><Clock size={18} /> 重要日程與考試倒數</h3>
-                <button 
-                  onClick={() => { setEventForm({ id: null, type: 'event', title: '', date: getLocalDateStr(new Date()) }); setShowEventModal(true); }}
-                  className="bg-white/20 p-1.5 rounded-lg hover:bg-white/30 transition" title="新增段考或重要日程"
-                >
-                  <Plus size={16}/>
-                </button>
-              </div>
-
-              {events.length === 0 ? (
-                <div className="text-center text-sm opacity-80 py-4">目前沒有設定重要日程。</div>
-              ) : (
-                <div className="space-y-3">
-                  {events.sort((a,b) => new Date(a.date) - new Date(b.date)).map((ev) => {
-                    const diffTime = new Date(ev.date) - new Date();
-                    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    const isToday = daysLeft === 0;
-                    const isPast = daysLeft < 0;
-
-                    return (
-                      <div key={ev.id} className={`rounded-xl p-3 flex justify-between items-center backdrop-blur-sm border transition group ${
-                        isToday ? 'bg-amber-500/40 border-amber-300 shadow-lg animate-pulse' : 'bg-white/10 border-white/20 hover:bg-white/20'
-                      }`}>
-                        <div className="flex-1 cursor-pointer" onClick={() => handleEditEvent(ev, 'event')}>
-                          <div className={`font-bold flex items-center gap-2 ${isPast ? 'opacity-60 line-through' : ''}`}>
-                            {isToday && '🔥 今天！'} {ev.title} <Edit2 size={12} className="opacity-0 group-hover:opacity-100 transition"/>
-                          </div>
-                          <div className="text-xs opacity-80">{ev.date}</div>
-                        </div>
-                        <div className="text-right flex items-center gap-3">
-                          <div className="cursor-pointer" onClick={() => handleEditEvent(ev, 'event')}>
-                            <div className={`text-2xl font-black ${isPast ? 'text-red-300' : ''}`}>{isToday ? '0' : Math.abs(daysLeft)}</div>
-                            <div className="text-[10px] font-medium opacity-80">{isToday ? '就是今天' : (isPast ? '天前已結束' : '天後')}</div>
-                          </div>
-                          <button onClick={() => setEvents(events.filter(e => e.id !== ev.id))} className="p-1.5 hover:bg-white/20 rounded-md opacity-60 hover:opacity-100 transition text-red-200">
-                            <Trash2 size={16}/>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-slate-700 flex items-center gap-2"><CheckSquare size={18}/> 待辦與小考</h3>
-                <button 
-                  onClick={() => { setEventForm({ id: null, type: 'task', title: '', date: getLocalDateStr(new Date()) }); setShowEventModal(true); }}
-                  className="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-              
-              {tasks.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm">目前沒有任何任務，太棒了！</div>
-              ) : (
-                <div className="space-y-2">
-                  {tasks.sort((a,b) => new Date(a.date || '2099-01-01') - new Date(b.date || '2099-01-01')).map(task => (
-                    <div key={task.id} className={`flex items-center justify-between p-3 rounded-xl border group transition ${task.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:border-blue-200'}`}>
-                      <div className="flex items-center gap-3 flex-1">
-                        <button 
-                          onClick={() => setTasks(tasks.map(t => t.id === task.id ? {...t, completed: !t.completed} : t))}
-                          className={`min-w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${task.completed ? 'bg-green-500 border-green-500' : 'border-slate-300'}`}
-                        >
-                          {task.completed && <Check size={12} className="text-white" />}
-                        </button>
-                        <div className="flex flex-col flex-1 cursor-pointer" onClick={() => handleEditEvent(task, 'task')}>
-                           <div className={`text-sm font-bold flex items-center gap-2 ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                              {task.title} <Edit2 size={12} className="opacity-0 group-hover:opacity-100 text-slate-400 transition"/>
-                           </div>
-                           {task.date && (
-                             <div className={`text-[10px] ${task.completed ? 'text-slate-400' : 'text-blue-500 font-medium'}`}>
-                               📍 期限: {task.date}
-                             </div>
-                           )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 ml-2">
-                        {!task.completed && (
-                          <button onClick={() => sendNtfy(`任務提醒: ${task.title}`, `請在 ${task.date || '盡快'} 準備完成！`)} className="text-amber-500 p-1.5 hover:bg-amber-50 rounded-md transition" title="發送推播提醒">
-                            <Bell size={16} />
-                          </button>
-                        )}
-                        <button onClick={() => setTasks(tasks.filter(t => t.id !== task.id))} className="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-md transition">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ================== 設定分頁 ================== */}
-        {activeTab === 'settings' && (
-          <div className="space-y-4 max-w-2xl mx-auto animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Settings size={18}/> 系統設定</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">儀表板名稱 / 學校科別 (可自由填寫)</label>
-                  <input 
-                    type="text" 
-                    value={config.studentName}
-                    onChange={(e) => setConfig({...config, studentName: e.target.value})}
-                    placeholder="例如: 北科復工 / 王小明課表"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <h4 className="font-bold text-sm text-slate-700 mb-2 flex items-center gap-2"><Bell size={16}/> Ntfy 手機推播設定</h4>
-                  <p className="text-xs text-slate-500 mb-3">透過 ntfy.sh 免費接收通知。在手機下載 ntfy App 並訂閱下方頻道名稱即可連動。</p>
-                  <input 
-                    type="text" 
-                    value={config.ntfyTopic}
-                    onChange={(e) => setConfig({...config, ntfyTopic: e.target.value})}
-                    placeholder="例如: john_hs_schedule_999"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"
-                  />
-                  <button onClick={() => sendNtfy('測試通知', '如果手機有響，代表連動成功！')} className="text-xs bg-amber-500 text-white px-3 py-2 rounded-lg font-bold shadow-sm w-full">
-                    發送測試推播
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Save size={18}/> 備份與還原</h3>
-              <div className="flex gap-3 mb-4">
-                <button onClick={() => {
-                  const data = JSON.stringify({ schedule, tasks, events, config }, null, 2);
-                  const blob = new Blob([data], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `課表備份_${getLocalDateStr(new Date())}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }} className="flex-1 flex items-center justify-center gap-2 bg-slate-800 text-white py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-700 transition">
-                  <Download size={16}/> 下載備份
-                </button>
-                <label className="flex-1 flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-700 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:bg-slate-50 transition">
-                  <Upload size={16}/> 匯入資料
-                  <input type="file" accept=".json" onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (evt) => {
-                      try {
-                        const data = JSON.parse(evt.target.result);
-                        if(data.schedule) setSchedule(data.schedule);
-                        if(data.tasks) setTasks(data.tasks);
-                        if(data.events) setEvents(data.events);
-                        if(data.config) setConfig(data.config);
-                        alert('匯入成功！');
-                      } catch (err) { alert('檔案格式錯誤！'); }
-                    };
-                    reader.readAsText(file);
-                  }} className="hidden" />
-                </label>
-              </div>
-              <div className="pt-4 border-t border-slate-100 text-center">
-                   <button onClick={() => {
-                     if(window.confirm("確定要將課表恢復成預設的初始課表嗎？")) setSchedule(FULL_SCHEDULE);
-                   }} className="text-xs text-red-500 hover:text-red-700 font-medium underline">
-                       重置為預設課表
-                   </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* 底部導覽列 */}
-      <div className="fixed bottom-0 w-full bg-white border-t border-slate-200 px-6 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
-        <div className="max-w-md mx-auto flex justify-between items-center">
-          <button onClick={() => setActiveTab('schedule')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'schedule' ? 'text-blue-600' : 'text-slate-400'}`}>
-            <CalendarIcon size={22} className={activeTab === 'schedule' ? 'fill-blue-50' : ''} />
-            <span className="text-[10px] font-bold mt-1">課表</span>
-          </button>
-          <button onClick={() => setActiveTab('tasks')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'tasks' ? 'text-blue-600' : 'text-slate-400'}`}>
-            <CheckSquare size={22} className={activeTab === 'tasks' ? 'fill-blue-50' : ''} />
-            <span className="text-[10px] font-bold mt-1">任務/行事曆</span>
-          </button>
-          <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-slate-400'}`}>
-            <Settings size={22} className={activeTab === 'settings' ? 'fill-blue-50' : ''} />
-            <span className="text-[10px] font-bold mt-1">設定/管理</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 編輯課程 Modal */}
-      {selectedCell && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg text-slate-800">編輯課程</h3>
-              <button onClick={() => setSelectedCell(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded-full"><X size={20}/></button>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-slate-500 mb-1 block">科目名稱 (留空則刪除此節)</label>
-                <input autoFocus type="text" value={editFormData.name} onChange={e => setEditFormData({...editFormData, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" placeholder="例如: 數學"/>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-xs font-bold text-slate-500 mb-1 block">老師</label>
-                  <input type="text" value={editFormData.teacher} onChange={e => setEditFormData({...editFormData, teacher: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="例如: 林佳良"/>
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs font-bold text-slate-500 mb-1 block">教室 (選填)</label>
-                  <input type="text" value={editFormData.room} onChange={e => setEditFormData({...editFormData, room: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="一般教室"/>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500 mb-2 block">顏色標籤</label>
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map(c => (
-                    <button key={c.id} onClick={() => setEditFormData({...editFormData, color: c.id})} className={`w-8 h-8 rounded-full border-2 transition-transform ${c.class} ${editFormData.color === c.id ? 'scale-110 ring-2 ring-offset-1 ring-slate-400' : 'border-transparent opacity-70'}`} />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <button onClick={handleSaveCell} className="w-full mt-6 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700">儲存變更</button>
-          </div>
-        </div>
-      )}
-
-      {/* 新增/編輯任務與段考 Modal */}
-      {showEventModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg text-slate-800">{eventForm.id ? '修改事項' : '新增行事曆事項'}</h3>
-              <button onClick={() => setShowEventModal(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded-full"><X size={20}/></button>
-            </div>
-            
-            <div className="space-y-4">
-              {!eventForm.id && (
-                <div className="flex bg-slate-100 p-1 rounded-xl">
-                  <button onClick={() => setEventForm({...eventForm, type: 'event'})} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${eventForm.type === 'event' ? 'bg-white shadow-sm text-purple-600' : 'text-slate-500'}`}>
-                    📅 段考 / 重要日子
-                  </button>
-                  <button onClick={() => setEventForm({...eventForm, type: 'task'})} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${eventForm.type === 'task' ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500'}`}>
-                    📝 待辦任務 / 作業
-                  </button>
-                </div>
-              )}
-
-              <div>
-                <label className="text-xs font-bold text-slate-500 mb-1 block">
-                  {eventForm.type === 'event' ? '重要日子名稱' : '任務內容'}
-                </label>
-                <input 
-                  autoFocus type="text" 
-                  value={eventForm.title} 
-                  onChange={e => setEventForm({...eventForm, title: e.target.value})} 
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" 
-                  placeholder={eventForm.type === 'event' ? "例如: 第一次期中考" : "例如: 繳交國文報告"}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-500 mb-1 block">日期</label>
-                <input 
-                  type="date" 
-                  value={eventForm.date} 
-                  onChange={e => setEventForm({...eventForm, date: e.target.value})} 
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700" 
-                />
-              </div>
-            </div>
-
-            <button onClick={handleSaveEventForm} className="w-full mt-6 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 transition">
-              儲存
-            </button>
-          </div>
-        </div>
-      )}
     </div>
-  );
-}
+  </div>
+
+  <main class="max-w-5xl mx-auto p-2 sm:p-4 mt-2">
+    
+    <!-- ================== 課表分頁 ================== -->
+    <div id="tab-schedule" class="space-y-4">
+      <div class="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+        <h2 class="font-bold flex items-center gap-2 text-slate-700">
+          <i data-lucide="calendar" class="w-4 h-4 sm:w-5 sm:h-5"></i> 本週課表
+        </h2>
+        <button onclick="toggleEditMode()" id="btn-edit-mode" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200">
+          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> <span>編輯模式</span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto relative">
+        <div id="edit-overlay" class="absolute inset-0 bg-amber-500/5 border-2 border-amber-400 pointer-events-none rounded-2xl z-10 hidden"></div>
+        <table class="w-full text-center border-collapse min-w-[550px] sm:min-w-[650px]">
+          <thead>
+            <tr class="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
+              <th class="py-2.5 w-14 sm:w-16 border-r border-slate-200 font-medium">時間</th>
+              <th class="py-2.5 w-[18%] font-bold text-slate-700">一</th>
+              <th class="py-2.5 w-[18%] font-bold text-slate-700">二</th>
+              <th class="py-2.5 w-[18%] font-bold text-slate-700">三</th>
+              <th class="py-2.5 w-[18%] font-bold text-slate-700">四</th>
+              <th class="py-2.5 w-[18%] font-bold text-slate-700">五</th>
+            </tr>
+          </thead>
+          <tbody id="schedule-body" class="divide-y divide-slate-100">
+            <!-- JS 動態產生課表 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================== 任務/行事曆分頁 ================== -->
+    <div id="tab-tasks" class="space-y-4 max-w-2xl mx-auto hidden">
+      
+      <!-- 月曆 -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
+        <div class="flex justify-between items-center mb-4 text-slate-700">
+          <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+          <span id="calendar-month-year" class="font-bold text-base sm:text-lg">--</span>
+          <button onclick="changeMonth(1)" class="p-1.5 hover:bg-slate-100 rounded-lg"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-xs font-bold text-slate-400 mb-2">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 sm:gap-2">
+          <!-- JS 動態產生月曆 -->
+        </div>
+      </div>
+
+      <!-- 段考倒數 -->
+      <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 sm:p-5 text-white shadow-md relative">
+        <div class="flex justify-between items-center mb-4 opacity-90">
+          <h3 class="font-bold flex items-center gap-2 text-sm sm:text-base"><i data-lucide="clock" class="w-4 h-4 sm:w-5 sm:h-5"></i> 重要日程與考試倒數</h3>
+          <button onclick="openEventModal(null, 'event')" class="bg-white/20 p-1.5 rounded-lg hover:bg-white/30 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="events-container" class="space-y-3">
+          <!-- JS 動態產生倒數 -->
+        </div>
+      </div>
+
+      <!-- 待辦清單 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm sm:text-base"><i data-lucide="check-square" class="w-4 h-4 sm:w-5 sm:h-5"></i> 待辦與小考</h3>
+          <button onclick="openEventModal(null, 'task')" class="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="tasks-container" class="space-y-2">
+          <!-- JS 動態產生任務 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ================== 設定分頁 ================== -->
+    <div id="tab-settings" class="space-y-4 max-w-2xl mx-auto hidden">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 sm:w-5 sm:h-5"></i> 系統設定</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">儀表板名稱 (可自由填寫)</label>
+            <input id="input-school-name" type="text" placeholder="例如: 北科復工" onchange="saveSettings()" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <h4 class="font-bold text-sm text-slate-700 mb-2 flex items-center gap-2"><i data-lucide="bell" class="w-4 h-4"></i> Ntfy 手機推播</h4>
+            <p class="text-[10px] sm:text-xs text-slate-500 mb-3">透過 ntfy.sh 免費接收通知。在手機下載 ntfy App 並訂閱下方頻道名稱即可連動。</p>
+            <input id="input-ntfy-topic" type="text" placeholder="輸入頻道密語 (例: john_hs_999)" onchange="saveSettings()" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"/>
+            <button onclick="testNtfy()" class="w-full text-xs bg-amber-500 text-white px-3 py-2 rounded-lg font-bold shadow-sm">發送測試推播</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="save" class="w-4 h-4 sm:w-5 sm:h-5"></i> 備份與還原</h3>
+        <div class="flex gap-3 mb-4">
+          <button onclick="exportData()" class="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 text-white py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm hover:bg-slate-700 transition">
+            <i data-lucide="download" class="w-4 h-4"></i> 下載備份
+          </button>
+          <label class="flex-1 flex items-center justify-center gap-1.5 bg-white border-2 border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs sm:text-sm font-bold cursor-pointer hover:bg-slate-50 transition">
+            <i data-lucide="upload" class="w-4 h-4"></i> 匯入資料
+            <input type="file" accept=".json" onchange="importData(event)" class="hidden" />
+          </label>
+        </div>
+        <div class="pt-4 border-t border-slate-100 text-center">
+          <button onclick="resetData()" class="text-xs text-red-500 hover:text-red-700 font-medium underline">重置為預設課表</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 底部導覽列 -->
+  <div class="fixed bottom-0 w-full bg-white border-t border-slate-200 px-4 sm:px-6 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <button onclick="switchTab('schedule')" id="nav-schedule" class="flex flex-col items-center p-2 text-blue-600 transition-colors">
+        <i data-lucide="calendar" class="w-5 h-5 sm:w-6 sm:h-6 fill-blue-50"></i>
+        <span class="text-[10px] font-bold mt-1">課表</span>
+      </button>
+      <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center p-2 text-slate-400 transition-colors">
+        <i data-lucide="check-square" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+        <span class="text-[10px] font-bold mt-1">任務/行事曆</span>
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center p-2 text-slate-400 transition-colors">
+        <i data-lucide="settings" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+        <span class="text-[10px] font-bold mt-1">設定/管理</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 編輯課表 Modal -->
+  <div id="modal-cell" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl transition-transform transform scale-95" id="modal-cell-content">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg text-slate-800">編輯課程</h3>
+        <button onclick="closeModal('modal-cell')" class="p-1 text-slate-400 hover:bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-500 mb-1 block">科目名稱 (留空則刪除此節)</label>
+          <input id="cell-name" type="text" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold"/>
+        </div>
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <label class="text-xs font-bold text-slate-500 mb-1 block">老師</label>
+            <input id="cell-teacher" type="text" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"/>
+          </div>
+          <div class="flex-1">
+            <label class="text-xs font-bold text-slate-500 mb-1 block">教室 (選填)</label>
+            <input id="cell-room" type="text" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"/>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-500 mb-2 block">顏色標籤</label>
+          <div id="color-picker" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+      <button onclick="saveCell()" class="w-full mt-6 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700">儲存變更</button>
+    </div>
+  </div>
+
+  <!-- 編輯行事曆 Modal -->
+  <div id="modal-event" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl transition-transform transform scale-95" id="modal-event-content">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="event-modal-title" class="font-bold text-lg text-slate-800">事項設定</h3>
+        <button onclick="closeModal('modal-event')" class="p-1 text-slate-400 hover:bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-4">
+        <div id="event-type-selector" class="flex bg-slate-100 p-1 rounded-xl">
+          <button onclick="setEventType('event')" id="btn-type-event" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-white shadow-sm text-purple-600">📅 重要日程</button>
+          <button onclick="setEventType('task')" id="btn-type-task" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-500">📝 待辦任務</button>
+        </div>
+        <div>
+          <label id="event-title-label" class="text-xs font-bold text-slate-500 mb-1 block">名稱</label>
+          <input id="event-title" type="text" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"/>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-500 mb-1 block">日期</label>
+          <input id="event-date" type="date" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700"/>
+        </div>
+      </div>
+      <button onclick="saveEvent()" class="w-full mt-6 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700">儲存</button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 常數與資料結構
+    // ==========================================
+    const TIME_SLOTS = [
+      { id: 0, name: '早自習', start: '07:30', end: '07:50' },
+      { id: 1, name: '第一節', start: '08:10', end: '09:00' },
+      { id: 2, name: '第二節', start: '09:10', end: '10:00' },
+      { id: 3, name: '第三節', start: '10:10', end: '11:00' },
+      { id: 4, name: '第四節', start: '11:10', end: '12:00' },
+      { id: 5, name: '第五節', start: '13:10', end: '14:00' },
+      { id: 6, name: '第六節', start: '14:10', end: '15:00' },
+      { id: 7, name: '第七節', start: '15:15', end: '16:05' },
+      { id: 8, name: '第八節', start: '16:10', end: '17:00' },
+    ];
+
+    const COLORS = [
+      { id: 'red', class: 'bg-red-100 text-red-900 border-red-200 ring-red-400' },
+      { id: 'blue', class: 'bg-blue-100 text-blue-900 border-blue-200 ring-blue-400' },
+      { id: 'green', class: 'bg-green-100 text-green-900 border-green-200 ring-green-400' },
+      { id: 'yellow', class: 'bg-amber-100 text-amber-900 border-amber-200 ring-amber-400' },
+      { id: 'purple', class: 'bg-purple-100 text-purple-900 border-purple-200 ring-purple-400' },
+      { id: 'indigo', class: 'bg-indigo-100 text-indigo-900 border-indigo-200 ring-indigo-400' },
+      { id: 'pink', class: 'bg-pink-100 text-pink-900 border-pink-200 ring-pink-400' },
+      { id: 'teal', class: 'bg-teal-100 text-teal-900 border-teal-200 ring-teal-400' },
+      { id: 'gray', class: 'bg-slate-100 text-slate-800 border-slate-200 ring-slate-400' },
+    ];
+
+    const FULL_SCHEDULE = {
+      "1_1": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "3_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "4_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "5_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "6_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "7_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "8_1": { name: '數位電路選', teacher: '張偉勤', color: 'blue' },
+      "1_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' }, "2_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' }, "3_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' }, "4_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' }, "5_2": { name: '地理', teacher: '邱坤豪', color: 'purple' }, "6_2": { name: '地理', teacher: '邱坤豪', color: 'purple' }, "7_2": { name: '健康與護理', teacher: '陸淑芬', color: 'pink' }, "8_2": { name: '基本電學選', teacher: '吳育智', color: 'teal' },
+      "1_3": { name: '體育', teacher: '莊佳容', color: 'green' }, "2_3": { name: '體育', teacher: '莊佳容', color: 'green' }, "3_3": { name: '手語/閩南語', teacher: '范文芳/宋麗華', color: 'gray' }, "4_3": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "5_3": { name: '班會', teacher: '林宗平', color: 'gray' }, "6_3": { name: '彈性學習時間', teacher: '', color: 'gray' }, "7_3": { name: '團體活動時間', teacher: '', color: 'gray' },
+      "1_4": { name: '數學', teacher: '林佳良', color: 'blue' }, "2_4": { name: '數學', teacher: '林佳良', color: 'blue' }, "3_4": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "4_4": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "5_4": { name: '作文', teacher: '陳姿穎', color: 'red' }, "6_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' }, "7_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' },
+      "1_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "3_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "4_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "5_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "6_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "7_5": { name: '英語聽講', teacher: '林宗平', color: 'yellow' }, "8_5": { name: '英文選', teacher: '林宗平', color: 'yellow' },
+    };
+
+    // App 狀態
+    let appState = {
+      schedule: {},
+      tasks: [],
+      events: [],
+      config: { studentName: '北科復工', ntfyTopic: '' }
+    };
+
+    let isEditMode = false;
+    let currentMonthView = new Date();
+    let editCellKey = null;
+    let editEventId = null;
+    let editEventType = 'event';
+
+    // ==========================================
+    // 輔助函式
+    // ==========================================
+    const getLocalDateStr = (d) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    const getColorClass = (colorId) => {
+      const c = COLORS.find(c => c.id === colorId);
+      return c ? c.class : COLORS[8].class;
+    };
+
+    // ==========================================
+    // 儲存與讀取
+    // ==========================================
+    function loadData() {
+      const saved = localStorage.getItem('hs_app_data_html_v1');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          appState.schedule = Object.keys(data.schedule || {}).length > 0 ? data.schedule : JSON.parse(JSON.stringify(FULL_SCHEDULE));
+          appState.tasks = data.tasks || [];
+          appState.events = data.events || [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
+          appState.config = data.config || { studentName: '北科復工', ntfyTopic: '' };
+        } catch(e) { resetData(false); }
+      } else {
+        resetData(false);
+      }
+      
+      // 更新 UI Input
+      document.getElementById('input-school-name').value = appState.config.studentName;
+      document.getElementById('input-ntfy-topic').value = appState.config.ntfyTopic;
+      renderAll();
+    }
+
+    function saveData() {
+      localStorage.setItem('hs_app_data_html_v1', JSON.stringify(appState));
+      renderAll();
+    }
+
+    function resetData(confirm = true) {
+      if (confirm && !window.confirm("確定要重置為預設課表嗎？")) return;
+      appState.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
+      if(!confirm) {
+        appState.events = [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
+      }
+      saveData();
+    }
+
+    // ==========================================
+    // 渲染 UI 邏輯
+    // ==========================================
+    function renderAll() {
+      renderDynamicIsland();
+      renderSchedule();
+      renderTasksAndEvents();
+      renderCalendar();
+      lucide.createIcons();
+    }
+
+    // 動態狀態列
+    function renderDynamicIsland() {
+      const now = new Date();
+      document.getElementById('current-time-display').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      document.getElementById('display-school-name').innerText = appState.config.studentName || '未命名課表';
+
+      const todayStr = getLocalDateStr(now);
+      const todayExam = appState.events.find(e => e.date === todayStr);
+      const island = document.getElementById('dynamic-island');
+      const iconBg = document.getElementById('status-icon-bg');
+      const msg = document.getElementById('status-message');
+
+      if (todayExam) {
+        island.className = "bg-amber-50 px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-amber-200 text-amber-900 transition-colors";
+        iconBg.className = "p-2 rounded-xl flex items-center justify-center bg-amber-500 text-white animate-bounce";
+        document.getElementById('status-icon').setAttribute('data-lucide', 'alert-triangle');
+        msg.innerText = `🔥 今日重點：${todayExam.title}！`;
+      } else {
+        island.className = "bg-white px-4 py-3 shadow-sm sticky top-0 z-30 border-b border-slate-200 transition-colors";
+        iconBg.className = "p-2 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600";
+        document.getElementById('status-icon').setAttribute('data-lucide', 'bell');
+        
+        // 尋找當前課程
+        const day = now.getDay();
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        let found = false;
+        if (day >= 1 && day <= 5) {
+          for (let i = 0; i < TIME_SLOTS.length; i++) {
+            const slot = TIME_SLOTS[i];
+            const [sH, sM] = slot.start.split(':').map(Number);
+            const [eH, eM] = slot.end.split(':').map(Number);
+            const cell = appState.schedule[`${i}_${day}`];
+            const className = cell ? cell.name : slot.name;
+
+            if (nowMins >= (sH*60+sM) && nowMins <= (eH*60+eM)) {
+              msg.innerText = `正在上：${className}`;
+              found = true; break;
+            } else if (nowMins < (sH*60+sM)) {
+              msg.innerText = `下堂課：${className} (${(sH*60+sM) - nowMins}分後)`;
+              found = true; break;
+            }
+          }
+        }
+        if (!found) msg.innerText = (day===0||day===6) ? '週末放假中 🎉' : '今日課程已結束 🎒';
+      }
+      lucide.createIcons();
+    }
+
+    // 課表
+    function renderSchedule() {
+      const tbody = document.getElementById('schedule-body');
+      tbody.innerHTML = '';
+      
+      TIME_SLOTS.forEach((slot, rIdx) => {
+        const tr = document.createElement('tr');
+        if (rIdx === 4) tr.className = "border-b-4 border-slate-200";
+        
+        let html = `<td class="py-1.5 sm:py-2 border-r border-slate-200 bg-slate-50/50">
+                      <div class="text-xs font-bold text-slate-700">${slot.name}</div>
+                      <div class="text-[9px] sm:text-[10px] text-slate-400">${slot.start}</div>
+                    </td>`;
+        
+        for (let cIdx = 1; cIdx <= 5; cIdx++) {
+          const key = `${rIdx}_${cIdx}`;
+          const cell = appState.schedule[key];
+          
+          if (isEditMode) {
+            html += `<td class="p-1 sm:p-1.5 align-top h-14 sm:h-20 border-r border-slate-50 last:border-0 relative">
+                      <div onclick="openCellModal('${key}')" class="w-full h-full rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition ${cell ? getColorClass(cell.color) : 'border-slate-300 hover:bg-slate-50'}">
+                        ${cell ? `<div class="font-bold text-[11px] sm:text-xs leading-tight line-clamp-1">${cell.name}</div>` : `<i data-lucide="plus" class="w-4 h-4 text-slate-400"></i>`}
+                      </div>
+                     </td>`;
+          } else {
+            if (cell) {
+              html += `<td class="p-1 sm:p-1.5 align-top h-14 sm:h-20 border-r border-slate-50 last:border-0 relative">
+                        <div class="w-full h-full rounded-xl p-1.5 border flex flex-col justify-start text-left shadow-sm overflow-hidden ${getColorClass(cell.color)}">
+                          <div class="font-bold text-[11px] sm:text-[13px] leading-tight tracking-tight mb-0.5 line-clamp-2">${cell.name}</div>
+                          <div class="text-[9px] sm:text-[10px] opacity-80 leading-tight truncate">${cell.teacher}</div>
+                          ${cell.room ? `<div class="text-[8px] sm:text-[9px] opacity-70 truncate mt-auto pt-0.5"><i data-lucide="clock" class="w-2.5 h-2.5 inline mr-0.5"></i>${cell.room}</div>` : ''}
+                        </div>
+                       </td>`;
+            } else {
+              html += `<td class="p-1 sm:p-1.5 align-top h-14 sm:h-20 border-r border-slate-50 last:border-0 relative">
+                        ${rIdx === 0 ? `<div class="w-full h-full flex items-center justify-center text-[10px] sm:text-xs text-slate-300 italic bg-slate-50/30 rounded-xl">晨讀</div>` : `<div class="w-full h-full rounded-xl border border-dashed border-slate-100/50 bg-slate-50/20"></div>`}
+                       </td>`;
+            }
+          }
+        }
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    // 任務與行事曆
+    function renderTasksAndEvents() {
+      // 排序與渲染 Events
+      const evCont = document.getElementById('events-container');
+      const sortedEvents = [...appState.events].sort((a,b) => new Date(a.date) - new Date(b.date));
+      
+      if (sortedEvents.length === 0) {
+        evCont.innerHTML = '<div class="text-center text-sm opacity-80 py-4">目前沒有設定重要日程。</div>';
+      } else {
+        evCont.innerHTML = sortedEvents.map(ev => {
+          const daysLeft = Math.ceil((new Date(ev.date) - new Date()) / (1000 * 60 * 60 * 24));
+          const isToday = daysLeft === 0;
+          const isPast = daysLeft < 0;
+          return `
+            <div class="rounded-xl p-3 flex justify-between items-center backdrop-blur-sm border transition group ${isToday ? 'bg-amber-500/40 border-amber-300 shadow-lg animate-pulse' : 'bg-white/10 border-white/20 hover:bg-white/20'}">
+              <div class="flex-1 cursor-pointer" onclick="openEventModal('${ev.id}', 'event')">
+                <div class="font-bold flex items-center gap-2 text-sm sm:text-base ${isPast ? 'opacity-60 line-through' : ''}">
+                  ${isToday ? '🔥 今天！' : ''} ${ev.title} <i data-lucide="edit-2" class="w-3 h-3 opacity-50"></i>
+                </div>
+                <div class="text-[10px] sm:text-xs opacity-80">${ev.date}</div>
+              </div>
+              <div class="text-right flex items-center gap-2 sm:gap-3">
+                <div class="cursor-pointer" onclick="openEventModal('${ev.id}', 'event')">
+                  <div class="text-xl sm:text-2xl font-black ${isPast ? 'text-red-300' : ''}">${isToday ? '0' : Math.abs(daysLeft)}</div>
+                  <div class="text-[9px] sm:text-[10px] font-medium opacity-80">${isToday ? '就是今天' : (isPast ? '天前結束' : '天後')}</div>
+                </div>
+                <button onclick="deleteEvent('${ev.id}')" class="p-1.5 hover:bg-white/20 rounded-md opacity-60 hover:opacity-100 transition text-red-200">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      // 排序與渲染 Tasks
+      const tkCont = document.getElementById('tasks-container');
+      const sortedTasks = [...appState.tasks].sort((a,b) => new Date(a.date||'2099') - new Date(b.date||'2099'));
+      
+      if (sortedTasks.length === 0) {
+        tkCont.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">目前沒有任何任務，太棒了！</div>';
+      } else {
+        tkCont.innerHTML = sortedTasks.map(tk => `
+          <div class="flex items-center justify-between p-2.5 sm:p-3 rounded-xl border group transition ${tk.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:border-blue-200'}">
+            <div class="flex items-center gap-3 flex-1">
+              <button onclick="toggleTask('${tk.id}')" class="min-w-[20px] w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${tk.completed ? 'bg-green-500 border-green-500' : 'border-slate-300'}">
+                ${tk.completed ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
+              </button>
+              <div class="flex flex-col flex-1 cursor-pointer" onclick="openEventModal('${tk.id}', 'task')">
+                <div class="text-xs sm:text-sm font-bold flex items-center gap-2 ${tk.completed ? 'text-slate-400 line-through' : 'text-slate-700'}">
+                  ${tk.title} <i data-lucide="edit-2" class="w-3 h-3 text-slate-300"></i>
+                </div>
+                ${tk.date ? `<div class="text-[9px] sm:text-[10px] ${tk.completed ? 'text-slate-400' : 'text-blue-500 font-medium'}">📍 期限: ${tk.date}</div>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-1 sm:gap-1.5 ml-2">
+              ${!tk.completed ? `<button onclick="triggerNtfy('任務提醒: ${tk.title}', '請在 ${tk.date||'盡快'} 完成！')" class="text-amber-500 p-1.5 hover:bg-amber-50 rounded-md transition"><i data-lucide="bell" class="w-4 h-4"></i></button>` : ''}
+              <button onclick="deleteTask('${tk.id}')" class="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-md transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        `).join('');
+      }
+      lucide.createIcons();
+    }
+
+    // 月曆渲染
+    function renderCalendar() {
+      const year = currentMonthView.getFullYear();
+      const month = currentMonthView.getMonth();
+      document.getElementById('calendar-month-year').innerText = `${year}年 ${month + 1}月`;
+      
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const firstDay = new Date(year, month, 1).getDay();
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
+      
+      for(let i=1; i<=daysInMonth; i++) {
+        const dStr = getLocalDateStr(new Date(year, month, i));
+        const hasEv = appState.events.some(e => e.date === dStr);
+        const hasTk = appState.tasks.some(t => t.date === dStr && !t.completed);
+        const isToday = dStr === getLocalDateStr(new Date());
+
+        grid.innerHTML += `
+          <button onclick="openEventModal(null, 'event', '${dStr}')" class="flex flex-col items-center justify-center p-1.5 sm:p-2 rounded-xl transition hover:bg-blue-50/50 relative aspect-square ${isToday ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'}">
+            <span class="text-xs sm:text-sm ${isToday ? 'text-blue-700 font-bold' : 'text-slate-600 font-medium'}">${i}</span>
+            <div class="flex gap-1 mt-1">
+              ${hasEv ? '<span class="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-purple-500"></span>' : ''}
+              ${hasTk ? '<span class="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-amber-500"></span>' : ''}
+            </div>
+          </button>`;
+      }
+    }
+
+    function changeMonth(delta) {
+      currentMonthView = new Date(currentMonthView.getFullYear(), currentMonthView.getMonth() + delta, 1);
+      renderCalendar();
+    }
+
+    // ==========================================
+    // 互動操作
+    // ==========================================
+    function switchTab(tab) {
+      ['schedule', 'tasks', 'settings'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const nav = document.getElementById(`nav-${t}`);
+        nav.classList.remove('text-blue-600');
+        nav.classList.add('text-slate-400');
+        nav.querySelector('i').classList.remove('fill-blue-50');
+      });
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tab}`);
+      activeNav.classList.remove('text-slate-400');
+      activeNav.classList.add('text-blue-600');
+      activeNav.querySelector('i').classList.add('fill-blue-50');
+    }
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const btn = document.getElementById('btn-edit-mode');
+      const overlay = document.getElementById('edit-overlay');
+      if (isEditMode) {
+        btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-amber-500 text-white shadow-md";
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> <span>完成編輯</span>`;
+        overlay.classList.remove('hidden');
+      } else {
+        btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200";
+        btn.innerHTML = `<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> <span>編輯模式</span>`;
+        overlay.classList.add('hidden');
+      }
+      renderSchedule();
+    }
+
+    function saveSettings() {
+      appState.config.studentName = document.getElementById('input-school-name').value;
+      appState.config.ntfyTopic = document.getElementById('input-ntfy-topic').value;
+      saveData();
+    }
+
+    // Cell Modal
+    let selectedColor = 'gray';
+    function openCellModal(key) {
+      editCellKey = key;
+      const cell = appState.schedule[key] || { name:'', teacher:'', room:'', color:'gray' };
+      document.getElementById('cell-name').value = cell.name;
+      document.getElementById('cell-teacher').value = cell.teacher;
+      document.getElementById('cell-room').value = cell.room;
+      selectedColor = cell.color;
+      renderColorPicker();
+      
+      const modal = document.getElementById('modal-cell');
+      const content = document.getElementById('modal-cell-content');
+      modal.classList.remove('hidden');
+      setTimeout(() => content.classList.remove('scale-95'), 10);
+    }
+
+    function renderColorPicker() {
+      const p = document.getElementById('color-picker');
+      p.innerHTML = COLORS.map(c => `
+        <button onclick="selectedColor='${c.id}'; renderColorPicker();" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 transition-transform ${c.class} ${selectedColor === c.id ? 'scale-110 ring-2 ring-offset-1' : 'border-transparent opacity-70'}"></button>
+      `).join('');
+    }
+
+    function saveCell() {
+      const name = document.getElementById('cell-name').value;
+      if (!name.trim()) {
+        delete appState.schedule[editCellKey];
+      } else {
+        appState.schedule[editCellKey] = {
+          name,
+          teacher: document.getElementById('cell-teacher').value,
+          room: document.getElementById('cell-room').value,
+          color: selectedColor
+        };
+      }
+      closeModal('modal-cell');
+      saveData();
+    }
+
+    // Event Modal
+    function openEventModal(id, type, dateStr = null) {
+      editEventId = id;
+      editEventType = type;
+      const date = dateStr || getLocalDateStr(new Date());
+
+      document.getElementById('event-type-selector').style.display = id ? 'none' : 'flex';
+      setEventType(type);
+
+      if (id) {
+        const item = type === 'event' ? appState.events.find(e=>e.id===id) : appState.tasks.find(t=>t.id===id);
+        document.getElementById('event-title').value = item.title;
+        document.getElementById('event-date').value = item.date;
+      } else {
+        document.getElementById('event-title').value = '';
+        document.getElementById('event-date').value = date;
+      }
+
+      const modal = document.getElementById('modal-event');
+      const content = document.getElementById('modal-event-content');
+      modal.classList.remove('hidden');
+      setTimeout(() => content.classList.remove('scale-95'), 10);
+    }
+
+    function setEventType(type) {
+      editEventType = type;
+      const btnE = document.getElementById('btn-type-event');
+      const btnT = document.getElementById('btn-type-task');
+      if (type === 'event') {
+        btnE.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-white shadow-sm text-purple-600";
+        btnT.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-500";
+        document.getElementById('event-title-label').innerText = "重要日子名稱";
+        document.getElementById('event-title').placeholder = "例如: 第一次期中考";
+      } else {
+        btnT.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-white shadow-sm text-amber-600";
+        btnE.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-500";
+        document.getElementById('event-title-label').innerText = "任務內容";
+        document.getElementById('event-title').placeholder = "例如: 繳交學習歷程";
+      }
+    }
+
+    function saveEvent() {
+      const title = document.getElementById('event-title').value;
+      const date = document.getElementById('event-date').value;
+      if (!title.trim()) return alert("請輸入標題！");
+
+      if (editEventType === 'event') {
+        if (editEventId) {
+          appState.events = appState.events.map(e => e.id === editEventId ? {...e, title, date} : e);
+        } else {
+          appState.events.push({ id: Date.now().toString(), title, date, type: 'exam' });
+        }
+      } else {
+        if (editEventId) {
+          appState.tasks = appState.tasks.map(t => t.id === editEventId ? {...t, title, date} : t);
+        } else {
+          appState.tasks.push({ id: Date.now().toString(), title, date, completed: false });
+        }
+      }
+      closeModal('modal-event');
+      saveData();
+    }
+
+    function toggleTask(id) {
+      appState.tasks = appState.tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
+      saveData();
+    }
+    function deleteTask(id) { appState.tasks = appState.tasks.filter(t => t.id !== id); saveData(); }
+    function deleteEvent(id) { appState.events = appState.events.filter(e => e.id !== id); saveData(); }
+
+    function closeModal(id) {
+      document.getElementById(id+'-content').classList.add('scale-95');
+      setTimeout(() => document.getElementById(id).classList.add('hidden'), 200);
+    }
+
+    // ==========================================
+    // 推播與匯出功能
+    // ==========================================
+    async function triggerNtfy(title, message) {
+      const topic = appState.config.ntfyTopic;
+      if (!topic) {
+        alert('請先在設定中輸入 Ntfy 頻道名稱！');
+        switchTab('settings');
+        return;
+      }
+      try {
+        await fetch(`https://ntfy.sh/${topic}`, {
+          method: 'POST',
+          headers: { 'Title': `[北科復工] ${title}`, 'Tags': 'books,warning' },
+          body: message
+        });
+        alert('推播已發送至手機！');
+      } catch (e) { alert('推播發送失敗。'); }
+    }
+    function testNtfy() { triggerNtfy('測試通知', '如果手機有響，代表連動成功！'); }
+
+    function exportData() {
+      const dataStr = JSON.stringify(appState, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `北科復工課表備份_${getLocalDateStr(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if(data.schedule) appState.schedule = data.schedule;
+          if(data.tasks) appState.tasks = data.tasks;
+          if(data.events) appState.events = data.events;
+          if(data.config) appState.config = data.config;
+          alert('匯入成功！');
+          saveData();
+        } catch (err) { alert('檔案格式錯誤！'); }
+      };
+      reader.readAsText(file);
+    }
+
+    // 初始化啟動
+    setInterval(renderDynamicIsland, 60000);
+    window.onload = loadData;
+  </script>
+</body>
+</html>
 
 
