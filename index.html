@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>智慧課表與行事曆</title>
+  <title>雙人課表</title>
   <!-- 引入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 引入 Lucide Icons -->
@@ -12,6 +12,10 @@
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <!-- 加入主畫面時顯示的名稱 -->
+  <meta name="apple-mobile-web-app-title" content="雙人課表">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="雙人課表">
   <style>
     body { -webkit-tap-highlight-color: transparent; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -275,7 +279,7 @@
             <input id="event-push-enable" type="checkbox" class="w-4 h-4 rounded accent-indigo-600"/>
             <i data-lucide="alarm-clock" class="w-4 h-4"></i> 同時設定手機推播提醒
           </label>
-          <input id="event-push-time" type="time" value="08:00" class="w-full p-2.5 bg-[#FFFDF8] border border-indigo-200 rounded-xl text-base font-bold text-slate-700"/>
+          <input id="event-push-time" type="time" value="07:00" class="w-full p-2.5 bg-[#FFFDF8] border border-indigo-200 rounded-xl text-base font-bold text-slate-700"/>
           <p class="text-xs text-indigo-500 mt-1.5">會在上面選的日期＋這個時間，自動推播到你手機（建議設定在未來 3 天內）</p>
         </div>
       </div>
@@ -325,56 +329,10 @@
     ];
 
     const FULL_SCHEDULE = {
-      "1_1": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "3_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "4_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "5_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "6_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "7_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "8_1": { name: '數位電路選', teacher: '張偉勤', color: 'blue' },
-      "1_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' }, "2_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' }, "3_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' }, "4_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' }, "5_2": { name: '地理', teacher: '邱坤豪', color: 'purple' }, "6_2": { name: '地理', teacher: '邱坤豪', color: 'purple' }, "7_2": { name: '健康與護理', teacher: '陸淑芬', color: 'pink' }, "8_2": { name: '基本電學選', teacher: '吳育智', color: 'teal' },
-      "1_3": { name: '體育', teacher: '莊佳容', color: 'green' }, "2_3": { name: '體育', teacher: '莊佳容', color: 'green' }, "3_3": { name: '手語/閩南語', teacher: '范文芳/宋麗華', color: 'gray' }, "4_3": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "5_3": { name: '班會', teacher: '林宗平', color: 'gray' }, "6_3": { name: '彈性學習時間', teacher: '', color: 'gray' }, "7_3": { name: '團體活動時間', teacher: '', color: 'gray' },
-      "1_4": { name: '數學', teacher: '林佳良', color: 'blue' }, "2_4": { name: '數學', teacher: '林佳良', color: 'blue' }, "3_4": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "4_4": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "5_4": { name: '作文', teacher: '陳姿穎', color: 'red' }, "6_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' }, "7_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' },
-      "1_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_5": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "3_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "4_5": { name: '美術', teacher: '徐珮玲', room: '美術教室', color: 'pink' }, "5_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "6_5": { name: '數學', teacher: '林佳良', color: 'blue' }, "7_5": { name: '英語聽講', teacher: '林宗平', color: 'yellow' }, "8_5": { name: '英文選', teacher: '林宗平', color: 'yellow' },
     };
 
-    // 弟弟（龍安國小 114學年度 五年四班）課表，依上傳的功課表照片登入
+    // 弟弟的課表由使用者自行於編輯模式輸入
     const FULL_SCHEDULE_B = {
-      "0_1": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
-      "1_1": { name: '體育', teacher: '洪嘉鴻', color: 'teal' },
-      "2_1": { name: '國語', teacher: '何蕙如', color: 'red' },
-      "3_1": { name: '數學', teacher: '何蕙如', color: 'indigo' },
-      "4_1": { name: '藝術音樂', teacher: '蔡詠嫺', color: 'pink' },
-      "5_1": { name: '本土語言', teacher: '林美蘭', color: 'gray' },
-      "6_1": { name: '綜合活動', teacher: '', color: 'gray' },
-      "7_1": { name: '綜合活動', teacher: '', color: 'gray' },
-
-      "0_2": { name: '兒童週會', teacher: '', color: 'gray' },
-      "1_2": { name: '國語', teacher: '何蕙如', color: 'red' },
-      "2_2": { name: '社會', teacher: '陳蓉舒', color: 'purple' },
-      "3_2": { name: '社會', teacher: '陳蓉舒', color: 'purple' },
-      "4_2": { name: '數學', teacher: '何蕙如', color: 'indigo' },
-      "5_2": { name: '龍安嘉年華', teacher: '', color: 'pink' },
-      "6_2": { name: '自然', teacher: '黃敏吾', color: 'green' },
-      "7_2": { name: '英文', teacher: '王昭華/周玲', color: 'yellow' },
-
-      "0_3": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
-      "1_3": { name: '國語', teacher: '何蕙如', color: 'red' },
-      "2_3": { name: '數學', teacher: '何蕙如', color: 'indigo' },
-      "3_3": { name: '藝術', teacher: '陳怜竹', color: 'pink' },
-      "4_3": { name: '藝術', teacher: '陳怜竹', color: 'pink' },
-
-      "0_4": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
-      "1_4": { name: '國語', teacher: '何蕙如', color: 'red' },
-      "2_4": { name: '社會', teacher: '陳蓉舒', color: 'purple' },
-      "3_4": { name: 'i想像', teacher: '', color: 'yellow' },
-      "4_4": { name: '英文', teacher: '王昭華/周玲', color: 'yellow' },
-      "5_4": { name: '數學', teacher: '何蕙如', color: 'indigo' },
-      "6_4": { name: 'i創客', teacher: '黃詠激', color: 'blue' },
-      "7_4": { name: '健康', teacher: '', color: 'green' },
-
-      "0_5": { name: '導師時間', teacher: '何蕙如', color: 'gray' },
-      "1_5": { name: '自然', teacher: '黃敏吾', color: 'green' },
-      "2_5": { name: '自然', teacher: '黃敏吾', color: 'green' },
-      "3_5": { name: 'i視界', teacher: '王昭華/周玲', color: 'yellow' },
-      "4_5": { name: '國語', teacher: '何蕙如', color: 'red' },
-      "5_5": { name: 'i思維', teacher: '', color: 'indigo' },
-      "6_5": { name: '體育', teacher: '洪嘉鴻', color: 'teal' },
-      "7_5": { name: 'i閱家', teacher: '', color: 'yellow' },
     };
     const THEME_COLORS = [
       { id: 'blue',   accent: 'bg-blue-500',   soft: 'bg-blue-50',   text: 'text-blue-600',   ring: 'ring-blue-300', bgHex: '#EFF6FF' },
@@ -394,7 +352,7 @@
       activeChild: 'A',
       students: {
         A: { name: '', theme: 'blue',   schedule: {}, tasks: [], events: [] },
-        B: { name: '弟弟', theme: 'orange', schedule: JSON.parse(JSON.stringify(FULL_SCHEDULE_B)), tasks: [], events: [] }
+        B: { name: '', theme: 'orange', schedule: JSON.parse(JSON.stringify(FULL_SCHEDULE_B)), tasks: [], events: [] }
       },
       config: { ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
     };
@@ -518,7 +476,7 @@
             // 新版格式：兩個孩子分開存
             appState.activeChild = data.activeChild === 'B' ? 'B' : 'A';
             appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [] }, data.students.A || {});
-            appState.students.B = Object.assign({ name: '弟弟', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
+            appState.students.B = Object.assign({ name: '', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
             if (Object.keys(appState.students.A.schedule).length === 0) {
               appState.students.A.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
             }
@@ -986,7 +944,7 @@
         document.getElementById('event-note').value = '';
       }
       document.getElementById('event-push-enable').checked = false;
-      document.getElementById('event-push-time').value = '08:00';
+      document.getElementById('event-push-time').value = '07:00';
 
       const modal = document.getElementById('modal-event');
       const content = document.getElementById('modal-event-content');
@@ -1035,7 +993,7 @@
       }
 
       const pushEnabled = document.getElementById('event-push-enable').checked;
-      const pushTime = document.getElementById('event-push-time').value || '08:00';
+      const pushTime = document.getElementById('event-push-time').value || '07:00';
 
       closeModal('modal-event');
       saveData();
@@ -1231,7 +1189,7 @@
             // 新版格式（含哥哥/弟弟兩人）
             appState.activeChild = data.activeChild === 'B' ? 'B' : 'A';
             appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [] }, data.students.A || {});
-            appState.students.B = Object.assign({ name: '弟弟', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
+            appState.students.B = Object.assign({ name: '', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
           } else {
             // 舊版格式：匯入到目前選取的孩子身上
             if(data.schedule) cur().schedule = data.schedule;
