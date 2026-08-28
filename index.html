@@ -45,18 +45,19 @@
       </div>
     </div>
     <div id="dual-status" class="max-w-5xl mx-auto flex items-center gap-4 px-4 pb-2.5 pt-0.5 text-xs sm:text-sm">
-      <span id="dual-status-A">哥哥：載入中...</span>
-      <span class="text-slate-300">｜</span>
-      <span id="dual-status-B">弟弟：載入中...</span>
+      <span id="dual-status-A">姓名 1：載入中...</span>
+      <span id="dual-status-divider" class="text-slate-300">｜</span>
+      <span id="dual-status-B">姓名 2：載入中...</span>
     </div>
   </div>
 
   <main class="max-w-5xl mx-auto p-2 sm:p-4 mt-2">
 
-    <!-- 哥哥/弟弟 切換鈕 -->
-    <div id="child-switcher" class="flex gap-2 mb-4">
+    <!-- 姓名分頁切換鈕 -->
+    <div id="child-switcher" class="flex gap-2 mb-1">
       <!-- JS 動態產生 -->
     </div>
+    <p id="child-switcher-hint" class="text-xs text-slate-300 mb-3">💡 點選切換孩子・長按上方姓名可修改稱呼</p>
 
     <!-- ================== 課表分頁 ================== -->
     <div id="tab-schedule" class="space-y-4">
@@ -142,6 +143,13 @@
           <div>
             <label class="block text-sm font-bold text-slate-500 mb-1">姓名/班級 (也可在上方長按輸入)</label>
             <input id="input-school-name" type="text" placeholder="例如: 王小明 / 302班" onchange="saveSettings()" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div>
+              <div class="text-sm font-bold text-slate-600">只有一個孩子</div>
+              <div class="text-xs text-slate-400 mt-0.5">開啟後會隱藏第二個分頁，只顯示單一課表</div>
+            </div>
+            <button onclick="toggleSingleMode()" id="btn-singlemode-toggle" class="px-3 py-1.5 rounded-lg text-sm font-bold bg-slate-100 text-slate-500 flex-shrink-0">關閉</button>
           </div>
           <div>
             <label class="block text-sm font-bold text-slate-500 mb-2">這位孩子的主題色</label>
@@ -411,7 +419,7 @@
         A: { name: '', theme: 'blue',   schedule: {}, tasks: [], events: [], timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.A)) },
         B: { name: '', theme: 'orange', schedule: JSON.parse(JSON.stringify(FULL_SCHEDULE_B)), tasks: [], events: [], timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.B)) }
       },
-      config: { ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
+      config: { ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3, singleMode: false }
     };
     // 目前作用中孩子的資料（永遠回傳同一個物件參照，直接修改即可）
     function cur(){ return appState.students[appState.activeChild]; }
@@ -469,6 +477,30 @@
       }
     }
 
+    // 只有一個孩子時，隱藏第二個分頁跟雙人狀態列，畫面更單純
+    function toggleSingleMode() {
+      appState.config.singleMode = !appState.config.singleMode;
+      if (appState.config.singleMode) {
+        appState.activeChild = 'A'; // 開啟單人模式時，固定顯示第一個孩子
+      }
+      localStorage.setItem('hs_app_data_html_v1', JSON.stringify(appState)); // 先確保設定存檔
+      renderSingleModeToggle();
+      renderChildSwitcher();
+      applyChildBackground();
+      renderAll();
+    }
+    function renderSingleModeToggle() {
+      const btn = document.getElementById('btn-singlemode-toggle');
+      if (!btn) return;
+      if (appState.config.singleMode) {
+        btn.innerText = '開啟';
+        btn.className = "px-3 py-1.5 rounded-lg text-sm font-bold bg-blue-100 text-blue-600 flex-shrink-0";
+      } else {
+        btn.innerText = '關閉';
+        btn.className = "px-3 py-1.5 rounded-lg text-sm font-bold bg-slate-100 text-slate-500 flex-shrink-0";
+      }
+    }
+
     function toggleAutoNotify() {
       appState.config.autoNotify = !appState.config.autoNotify;
       renderAutoNotifyToggle();
@@ -501,7 +533,7 @@
     }
     function editHeaderName() {
       const current = cur().name || '';
-      const input = window.prompt(`請輸入${appState.activeChild === 'A' ? '哥哥' : '弟弟'}的姓名與班級`, current);
+      const input = window.prompt(`請輸入${appState.activeChild === 'A' ? '第一位孩子' : '第二位孩子'}的姓名與班級（本名、小名都可以）`, current);
       if (input !== null) {
         cur().name = input;
         document.getElementById('input-school-name').value = cur().name;
@@ -558,7 +590,7 @@
             appState.students.B.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE_B));
             appState.students.B.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.B));
           }
-          appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config || {});
+          appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3, singleMode: false }, data.config || {});
         } catch(e) { resetData(false); }
       } else {
         resetData(false);
@@ -570,6 +602,7 @@
       document.getElementById('input-reminder-days').value = appState.config.reminderDays;
       renderSoundToggle();
       renderAutoNotifyToggle();
+      renderSingleModeToggle();
       renderChildSwitcher();
       renderThemePicker();
       renderTimeSlotEditor();
@@ -664,12 +697,21 @@
 
     function renderChildSwitcher(){
       const wrap = document.getElementById('child-switcher');
+      const hint = document.getElementById('child-switcher-hint');
       if(!wrap) return;
+      if (appState.config.singleMode) {
+        wrap.innerHTML = '';
+        wrap.classList.add('hidden');
+        if (hint) hint.classList.add('hidden');
+        return;
+      }
+      wrap.classList.remove('hidden');
+      if (hint) hint.classList.remove('hidden');
       wrap.innerHTML = ['A','B'].map(id => {
         const s = appState.students[id];
         const theme = getTheme(s.theme);
         const active = appState.activeChild === id;
-        const label = s.name || (id === 'A' ? '哥哥' : '弟弟');
+        const label = s.name || (id === 'A' ? '姓名 1' : '姓名 2');
         return `<button onclick="switchChild('${id}')" class="flex-1 py-2 rounded-xl text-sm font-bold transition ${active ? theme.accent + ' text-white shadow-md' : theme.soft + ' ' + theme.text}">
           ${label}
         </button>`;
@@ -715,10 +757,20 @@
     function renderDualStatus(){
       const wrap = document.getElementById('dual-status');
       if (!wrap) return;
-      ['A','B'].forEach(id => {
+      const elB = document.getElementById('dual-status-B');
+      const divider = document.getElementById('dual-status-divider');
+      if (appState.config.singleMode) {
+        if (elB) elB.classList.add('hidden');
+        if (divider) divider.classList.add('hidden');
+      } else {
+        if (elB) elB.classList.remove('hidden');
+        if (divider) divider.classList.remove('hidden');
+      }
+      const ids = appState.config.singleMode ? ['A'] : ['A','B'];
+      ids.forEach(id => {
         const s = appState.students[id];
         const theme = getTheme(s.theme);
-        const label = s.name || (id === 'A' ? '哥哥' : '弟弟');
+        const label = s.name || (id === 'A' ? '姓名 1' : '姓名 2');
         const el = document.getElementById(`dual-status-${id}`);
         if (el) {
           el.innerHTML = `<span class="font-bold ${theme.text}">${label}</span>：${getChildCurrentClassLabel(id)}`;
@@ -1311,8 +1363,8 @@
             if(data.events) cur().events = data.events;
             if(data.config && data.config.studentName) cur().name = data.config.studentName;
           }
-          if(data.config) appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, {
-            ntfyTopic: data.config.ntfyTopic, soundOn: data.config.soundOn, autoNotify: data.config.autoNotify, reminderDays: data.config.reminderDays
+          if(data.config) appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3, singleMode: false }, {
+            ntfyTopic: data.config.ntfyTopic, soundOn: data.config.soundOn, autoNotify: data.config.autoNotify, reminderDays: data.config.reminderDays, singleMode: data.config.singleMode
           });
           alert('匯入成功！');
           document.getElementById('input-school-name').value = cur().name;
