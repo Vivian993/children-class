@@ -44,20 +44,21 @@
         長按輸入姓名/班級
       </div>
     </div>
-    <div id="dual-status" class="max-w-5xl mx-auto flex items-center gap-4 px-4 pb-2.5 pt-0.5 text-xs sm:text-sm">
+    <div id="dual-status" class="max-w-5xl mx-auto flex items-center gap-4 px-4 pb-2 pt-0.5 text-xs sm:text-sm">
       <span id="dual-status-A">姓名 1：載入中...</span>
       <span id="dual-status-divider" class="text-slate-300">｜</span>
       <span id="dual-status-B">姓名 2：載入中...</span>
     </div>
+    <!-- 姓名分頁切換鈕：跟著上方狀態列一起固定，捲動課表時不會跑掉 -->
+    <div class="max-w-5xl mx-auto px-4 pb-2">
+      <div id="child-switcher" class="flex gap-2 mb-1">
+        <!-- JS 動態產生 -->
+      </div>
+      <p id="child-switcher-hint" class="text-xs text-slate-300">💡 點選切換孩子・長按上方姓名可修改稱呼</p>
+    </div>
   </div>
 
   <main class="max-w-5xl mx-auto p-2 sm:p-4 mt-2">
-
-    <!-- 姓名分頁切換鈕 -->
-    <div id="child-switcher" class="flex gap-2 mb-1">
-      <!-- JS 動態產生 -->
-    </div>
-    <p id="child-switcher-hint" class="text-xs text-slate-300 mb-3">💡 點選切換孩子・長按上方姓名可修改稱呼</p>
 
     <!-- ================== 課表分頁 ================== -->
     <div id="tab-schedule" class="space-y-4">
@@ -353,7 +354,7 @@
     ];
 
     const FULL_SCHEDULE = {
-      "1_1": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "3_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "4_1": { name: '基礎電子實習', teacher: '黃薇漪/吳育智', color: 'teal' }, "5_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "6_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "7_1": { name: '程式設計實習', teacher: '黃薇漪/吳育智', color: 'indigo' }, "8_1": { name: '數位電路選', teacher: '張偉勤', color: 'blue' },
+      "1_1": { name: '國語文', teacher: '陳姿穎', color: 'red' }, "2_1": { name: '基礎電子實習', teacher: '黃筱濟/吳育智', color: 'teal' }, "3_1": { name: '基礎電子實習', teacher: '黃筱濟/吳育智', color: 'teal' }, "4_1": { name: '基礎電子實習', teacher: '黃筱濟/吳育智', color: 'teal' }, "5_1": { name: '程式設計實習', teacher: '黃筱濟/吳育智', color: 'indigo' }, "6_1": { name: '程式設計實習', teacher: '黃筱濟/吳育智', color: 'indigo' }, "7_1": { name: '程式設計實習', teacher: '黃筱濟/吳育智', color: 'indigo' }, "8_1": { name: '數位電路選', teacher: '張偉勤', color: 'blue' },
       "1_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' }, "2_2": { name: '數位電路', teacher: '張偉勤', color: 'blue' }, "3_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' }, "4_2": { name: '英語文', teacher: '林宗平外師', color: 'yellow' }, "5_2": { name: '地理', teacher: '邱坤豪', color: 'purple' }, "6_2": { name: '地理', teacher: '邱坤豪', color: 'purple' }, "7_2": { name: '健康與護理', teacher: '陸淑芬', color: 'pink' }, "8_2": { name: '基本電學選', teacher: '吳育智', color: 'teal' },
       "1_3": { name: '體育', teacher: '莊佳容', color: 'green' }, "2_3": { name: '體育', teacher: '莊佳容', color: 'green' }, "3_3": { name: '手語/閩南語', teacher: '范文芳/宋麗華', color: 'gray' }, "4_3": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "5_3": { name: '班會', teacher: '林宗平', color: 'gray' }, "6_3": { name: '彈性學習時間', teacher: '', color: 'gray' }, "7_3": { name: '團體活動時間', teacher: '', color: 'gray' },
       "1_4": { name: '數學', teacher: '林佳良', color: 'blue' }, "2_4": { name: '數學', teacher: '林佳良', color: 'blue' }, "3_4": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "4_4": { name: '基本電學', teacher: '吳育智', color: 'teal' }, "5_4": { name: '作文', teacher: '陳姿穎', color: 'red' }, "6_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' }, "7_4": { name: '物理', teacher: '徐慧菌', color: 'indigo' },
@@ -378,10 +379,10 @@
       "4_2": { name: '數學', teacher: '劉憶萱', color: 'indigo' },
       "5_2": { name: '本土語言', teacher: '陳蓉舒', color: 'blue' },
       "6_2": { name: '國語', teacher: '劉憶萱', color: 'red' },
-      "7_2": { name: '體育', teacher: '張蔚程', color: 'teal' },
+      "7_2": { name: '體育', teacher: '張緯程', color: 'teal' },
 
       "0_3": { name: '導師時間', teacher: '劉憶萱', color: 'blue' },
-      "1_3": { name: 'i視界', teacher: '黃思婕', color: 'yellow' },
+      "1_3": { name: 'i視界', teacher: '黃思姮', color: 'yellow' },
       "2_3": { name: '社會', teacher: '施柏源', color: 'purple' },
       "3_3": { name: 'i思維', teacher: '', color: 'indigo' },
       "4_3": { name: '國語', teacher: '劉憶萱', color: 'red' },
@@ -389,7 +390,7 @@
       "0_4": { name: '導師時間', teacher: '劉憶萱', color: 'blue' },
       "1_4": { name: '社會', teacher: '施柏源', color: 'purple' },
       "2_4": { name: '社會', teacher: '施柏源', color: 'purple' },
-      "3_4": { name: '體育', teacher: '張蔚程', color: 'teal' },
+      "3_4": { name: '體育', teacher: '張緯程', color: 'teal' },
       "4_4": { name: '國語', teacher: '劉憶萱', color: 'red' },
       "5_4": { name: '龍安嘉年華', teacher: '', color: 'pink' },
       "6_4": { name: '數學', teacher: '劉憶萱', color: 'indigo' },
@@ -883,7 +884,7 @@
         
         let html = `<td class="py-1.5 sm:py-2 border-r border-slate-200 bg-slate-50/50">
                       <div class="text-[11px] sm:text-sm font-bold text-slate-800">${slot.name}</div>
-                      <div class="text-[10px] sm:text-xs text-slate-500">${slot.start}</div>
+                      <div class="text-[10px] sm:text-xs text-slate-500">${slot.start}–${slot.end}</div>
                     </td>`;
         
         for (let cIdx = 1; cIdx <= 5; cIdx++) {
