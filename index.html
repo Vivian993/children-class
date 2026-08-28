@@ -147,6 +147,15 @@
             <label class="block text-sm font-bold text-slate-500 mb-2">這位孩子的主題色</label>
             <div id="theme-picker" class="flex flex-wrap gap-2"></div>
           </div>
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <h4 class="font-bold text-base text-slate-700 mb-1 flex items-center gap-2"><i data-lucide="clock" class="w-5 h-5"></i> 上課時間設定</h4>
+            <p class="text-xs sm:text-sm text-slate-500 mb-3">每個孩子的節次時間可以各自調整，改完會用在課表顯示跟「現在上課/等等要上課」的判斷。</p>
+            <div id="timeslot-editor" class="space-y-2"></div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="saveTimeSlots()" class="flex-1 text-sm bg-blue-600 text-white px-3 py-2 rounded-lg font-bold shadow-sm">儲存時間設定</button>
+              <button onclick="resetTimeSlots()" class="text-sm bg-slate-200 text-slate-600 px-3 py-2 rounded-lg font-bold">恢復預設</button>
+            </div>
+          </div>
           <div>
             <label class="flex items-center justify-between text-sm font-bold text-slate-500 mb-1">
               <span>按鍵音效</span>
@@ -291,7 +300,8 @@
     // ==========================================
     // 常數與資料結構
     // ==========================================
-    const TIME_SLOTS_BY_CHILD = {
+    // 預設節次時間（僅作範本；實際使用的時間存在 appState.students[x].timeSlots，可被使用者編輯覆蓋）
+    const DEFAULT_TIME_SLOTS = {
       A: [
         { id: 0, name: '早自習', start: '07:30', end: '07:50' },
         { id: 1, name: '第一節', start: '08:10', end: '09:00' },
@@ -314,7 +324,13 @@
         { id: 7, name: '第七節', start: '14:50', end: '15:30' },
       ],
     };
-    const getSlots = (childId) => TIME_SLOTS_BY_CHILD[childId] || TIME_SLOTS_BY_CHILD.A;
+    // 取得某孩子「目前實際使用」的節次時間：優先用使用者自己編輯過、存在 appState 裡的版本，
+    // 沒有的話（例如舊資料剛升級、或還沒編輯過）就退回預設範本
+    const getSlots = (childId) => {
+      const custom = appState.students[childId] && appState.students[childId].timeSlots;
+      if (custom && custom.length) return custom;
+      return DEFAULT_TIME_SLOTS[childId] || DEFAULT_TIME_SLOTS.A;
+    };
 
     const COLORS = [
       { id: 'red', class: 'bg-red-100 text-red-900 border-red-200 ring-red-400' },
@@ -331,8 +347,49 @@
     const FULL_SCHEDULE = {
     };
 
-    // 弟弟的課表由使用者自行於編輯模式輸入
+    // 弟弟（龍安國小 115學年度 五年四班，級任教師：劉憶萱）課表
     const FULL_SCHEDULE_B = {
+      "0_1": { name: '導師時間', teacher: '劉憶萱', color: 'gray' },
+      "1_1": { name: '數學', teacher: '劉憶萱', color: 'indigo' },
+      "2_1": { name: 'i創客', teacher: '黃詠激', color: 'blue' },
+      "3_1": { name: '國語', teacher: '劉憶萱', color: 'red' },
+      "4_1": { name: '國語', teacher: '劉憶萱', color: 'red' },
+      "5_1": { name: '健康', teacher: '', color: 'green' },
+      "6_1": { name: '英文', teacher: '張素玲', color: 'yellow' },
+      "7_1": { name: '綜合活動', teacher: '', color: 'gray' },
+
+      "0_2": { name: '兒童週會', teacher: '', color: 'gray' },
+      "1_2": { name: '藝術', teacher: '梁政道', color: 'pink' },
+      "2_2": { name: '藝術', teacher: '梁政道', color: 'pink' },
+      "3_2": { name: '自然', teacher: '王建翔', color: 'green' },
+      "4_2": { name: '數學', teacher: '劉憶萱', color: 'indigo' },
+      "5_2": { name: '本土語言', teacher: '陳蓉舒', color: 'gray' },
+      "6_2": { name: '國語', teacher: '劉憶萱', color: 'red' },
+      "7_2": { name: '體育', teacher: '張蔚程', color: 'teal' },
+
+      "0_3": { name: '導師時間', teacher: '劉憶萱', color: 'gray' },
+      "1_3": { name: 'i視界', teacher: '黃思婕', color: 'yellow' },
+      "2_3": { name: '社會', teacher: '施柏源', color: 'purple' },
+      "3_3": { name: 'i思維', teacher: '', color: 'indigo' },
+      "4_3": { name: '國語', teacher: '劉憶萱', color: 'red' },
+
+      "0_4": { name: '導師時間', teacher: '劉憶萱', color: 'gray' },
+      "1_4": { name: '社會', teacher: '施柏源', color: 'purple' },
+      "2_4": { name: '社會', teacher: '施柏源', color: 'purple' },
+      "3_4": { name: '體育', teacher: '張蔚程', color: 'teal' },
+      "4_4": { name: '國語', teacher: '劉憶萱', color: 'red' },
+      "5_4": { name: '龍安嘉年華', teacher: '', color: 'pink' },
+      "6_4": { name: '數學', teacher: '劉憶萱', color: 'indigo' },
+      "7_4": { name: '綜合活動', teacher: '', color: 'gray' },
+
+      "0_5": { name: '導師時間', teacher: '劉憶萱', color: 'gray' },
+      "1_5": { name: '自然', teacher: '王建翔', color: 'green' },
+      "2_5": { name: '自然', teacher: '王建翔', color: 'green' },
+      "3_5": { name: '藝術音樂', teacher: '蔡詠嫺', color: 'pink' },
+      "4_5": { name: '數學', teacher: '劉憶萱', color: 'indigo' },
+      "5_5": { name: 'i閱家', teacher: '', color: 'yellow' },
+      "6_5": { name: 'i想像', teacher: '', color: 'yellow' },
+      "7_5": { name: '英文', teacher: '張素玲', color: 'yellow' },
     };
     const THEME_COLORS = [
       { id: 'blue',   accent: 'bg-blue-500',   soft: 'bg-blue-50',   text: 'text-blue-600',   ring: 'ring-blue-300', bgHex: '#EFF6FF' },
@@ -351,8 +408,8 @@
     let appState = {
       activeChild: 'A',
       students: {
-        A: { name: '', theme: 'blue',   schedule: {}, tasks: [], events: [] },
-        B: { name: '', theme: 'orange', schedule: JSON.parse(JSON.stringify(FULL_SCHEDULE_B)), tasks: [], events: [] }
+        A: { name: '', theme: 'blue',   schedule: {}, tasks: [], events: [], timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.A)) },
+        B: { name: '', theme: 'orange', schedule: JSON.parse(JSON.stringify(FULL_SCHEDULE_B)), tasks: [], events: [], timeSlots: JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.B)) }
       },
       config: { ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }
     };
@@ -475,13 +532,20 @@
           if (data.students) {
             // 新版格式：兩個孩子分開存
             appState.activeChild = data.activeChild === 'B' ? 'B' : 'A';
-            appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [] }, data.students.A || {});
-            appState.students.B = Object.assign({ name: '', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
+            appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [], timeSlots: null }, data.students.A || {});
+            appState.students.B = Object.assign({ name: '', theme: 'orange', schedule: {}, tasks: [], events: [], timeSlots: null }, data.students.B || {});
             if (Object.keys(appState.students.A.schedule).length === 0) {
               appState.students.A.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE));
             }
             if (Object.keys(appState.students.B.schedule).length === 0) {
               appState.students.B.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE_B));
+            }
+            // 舊資料沒有 timeSlots（還沒編輯過節次時間）：帶入該孩子的預設範本
+            if (!appState.students.A.timeSlots || !appState.students.A.timeSlots.length) {
+              appState.students.A.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.A));
+            }
+            if (!appState.students.B.timeSlots || !appState.students.B.timeSlots.length) {
+              appState.students.B.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.B));
             }
           } else {
             // 舊版格式：搬移成哥哥(A)的資料，弟弟(B)帶入真實課表
@@ -490,7 +554,9 @@
             appState.students.A.tasks = data.tasks || [];
             appState.students.A.events = data.events || [{ id: 'init', title: '第一次期中考', date: getLocalDateStr(new Date(new Date().setDate(new Date().getDate() + 14))), type: 'exam' }];
             appState.students.A.name = (data.config && data.config.studentName) || '';
+            appState.students.A.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.A));
             appState.students.B.schedule = JSON.parse(JSON.stringify(FULL_SCHEDULE_B));
+            appState.students.B.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.B));
           }
           appState.config = Object.assign({ ntfyTopic: '', soundOn: true, autoNotify: true, reminderDays: 3 }, data.config || {});
         } catch(e) { resetData(false); }
@@ -506,6 +572,7 @@
       renderAutoNotifyToggle();
       renderChildSwitcher();
       renderThemePicker();
+      renderTimeSlotEditor();
       applyChildBackground();
       renderAll();
       autoNotifyIfNeeded();
@@ -535,6 +602,7 @@
       document.getElementById('input-school-name').value = cur().name;
       renderChildSwitcher();
       renderThemePicker();
+      renderTimeSlotEditor();
       applyChildBackground();
       saveData();
     }
@@ -545,6 +613,46 @@
       wrap.innerHTML = THEME_COLORS.map(t => `
         <button onclick="setChildTheme('${t.id}')" class="w-9 h-9 rounded-full ${t.accent} transition-transform ${cur().theme === t.id ? 'scale-110 ring-2 ring-offset-2 ' + t.ring : 'opacity-60'}"></button>
       `).join('');
+    }
+
+    // 上課時間編輯器：列出目前孩子每一節的名稱＋起訖時間，可直接修改
+    function renderTimeSlotEditor(){
+      const wrap = document.getElementById('timeslot-editor');
+      if (!wrap) return;
+      const slots = getSlots(appState.activeChild);
+      wrap.innerHTML = slots.map((slot, idx) => `
+        <div class="flex items-center gap-2">
+          <input type="text" value="${slot.name}" data-idx="${idx}" data-field="name"
+                 class="ts-input w-20 sm:w-24 p-2 bg-[#FFFDF8] border border-slate-200 rounded-lg text-sm font-bold flex-shrink-0"/>
+          <input type="time" value="${slot.start}" data-idx="${idx}" data-field="start"
+                 class="ts-input flex-1 p-2 bg-[#FFFDF8] border border-slate-200 rounded-lg text-sm"/>
+          <span class="text-slate-400 text-sm">～</span>
+          <input type="time" value="${slot.end}" data-idx="${idx}" data-field="end"
+                 class="ts-input flex-1 p-2 bg-[#FFFDF8] border border-slate-200 rounded-lg text-sm"/>
+        </div>
+      `).join('');
+    }
+
+    // 把編輯器目前輸入的內容，存回這個孩子的 timeSlots
+    function saveTimeSlots(){
+      const inputs = document.querySelectorAll('#timeslot-editor .ts-input');
+      const slots = getSlots(appState.activeChild).map(s => ({...s}));
+      inputs.forEach(inp => {
+        const idx = Number(inp.dataset.idx);
+        const field = inp.dataset.field;
+        if (slots[idx]) slots[idx][field] = inp.value;
+      });
+      cur().timeSlots = slots;
+      saveData();
+      renderTimeSlotEditor();
+    }
+
+    // 恢復這個孩子的節次時間為系統預設值
+    function resetTimeSlots(){
+      if (!window.confirm('確定要把這位孩子的上課時間恢復成預設值嗎？')) return;
+      cur().timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS[appState.activeChild] || DEFAULT_TIME_SLOTS.A));
+      saveData();
+      renderTimeSlotEditor();
     }
     function setChildTheme(themeId){
       cur().theme = themeId;
@@ -1188,8 +1296,14 @@
           if (data.students) {
             // 新版格式（含哥哥/弟弟兩人）
             appState.activeChild = data.activeChild === 'B' ? 'B' : 'A';
-            appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [] }, data.students.A || {});
-            appState.students.B = Object.assign({ name: '', theme: 'orange', schedule: {}, tasks: [], events: [] }, data.students.B || {});
+            appState.students.A = Object.assign({ name: '', theme: 'blue', schedule: {}, tasks: [], events: [], timeSlots: null }, data.students.A || {});
+            appState.students.B = Object.assign({ name: '', theme: 'orange', schedule: {}, tasks: [], events: [], timeSlots: null }, data.students.B || {});
+            if (!appState.students.A.timeSlots || !appState.students.A.timeSlots.length) {
+              appState.students.A.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.A));
+            }
+            if (!appState.students.B.timeSlots || !appState.students.B.timeSlots.length) {
+              appState.students.B.timeSlots = JSON.parse(JSON.stringify(DEFAULT_TIME_SLOTS.B));
+            }
           } else {
             // 舊版格式：匯入到目前選取的孩子身上
             if(data.schedule) cur().schedule = data.schedule;
@@ -1205,6 +1319,7 @@
           document.getElementById('input-ntfy-topic').value = appState.config.ntfyTopic;
           renderChildSwitcher();
       renderThemePicker();
+      renderTimeSlotEditor();
       applyChildBackground();
           saveData();
         } catch (err) { alert('檔案格式錯誤！'); }
